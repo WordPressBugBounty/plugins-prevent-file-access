@@ -1,0 +1,1 @@
+# plugins-prevent-file-access
