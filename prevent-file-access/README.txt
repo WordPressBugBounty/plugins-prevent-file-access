@@ -3,11 +3,11 @@ Contributors: cyberlord92
 Donate link: https://miniorange.com
 Tags: protect uploads, secure-files, content-restriction, protect-folders, media restriction, media management, download logs
 Requires at least: 3.0.1
-Tested up to: 6.5
+Tested up to: 6.8
 Requires PHP: 5.6
-Stable tag: 2.5.4
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Stable tag: 2.6.1
+License: Expat
+License URI: https://plugins.miniorange.com/mit-license
 
 Prevent public access to WordPress files and folders. Protect downloads from public access, Role-based folder access, and User base folder access.
 
@@ -142,6 +142,13 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 6. Contact us or support
 
 == Changelog ==
+= 2.6.1 = 
+* Security fixes
+
+= 2.6.0 =
+* Added Compatibility with WordPress 6.8
+* URL migration
+
 = 2.5.4 =
 * Added Compatibility with WordPress 6.5
 * Handled server rules removal on plugin deactivation.
@@ -221,6 +228,13 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 * Initial release
 
 == Upgrade Notice ==
+= 2.6.1 = 
+* Security fixes
+
+= 2.6.0 =
+* Added Compatibility with WordPress 6.8
+* URL migration
+
 = 2.5.4 =
 * Added Compatibility with WordPress 6.5
 * Handled server rules removal on plugin deactivation.

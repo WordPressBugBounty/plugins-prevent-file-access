@@ -63,35 +63,160 @@ class Media_Restriction_Admin {
 	}
 
 	/**
+	 * Validate and sanitize file path to prevent path traversal attacks
+	 *
+	 * @param string $path The path to validate.
+	 * @return string|false The validated path or false if invalid
+	 */
+	private function mo_media_restriction_validate_path( $path ) {
+		$path = str_replace( array( "\0", "\x00" ), '', $path );
+		$path = str_replace( '\\', '/', $path );
+
+		$previous_path = '';
+		while ( $path !== $previous_path ) {
+			$previous_path = $path;
+			$path          = urldecode( $path );
+		}
+
+		$path = str_replace( '\\', '/', $path );
+
+		$dangerous_patterns = array(
+			'../',
+			'..\\',
+			'%2e%2e%2f',
+			'%2e%2e%5c',
+			'%252e%252e%252f',
+			'%252e%252e%255c',
+			'0x2e0x2e0x2f',
+			'0x2e0x2e0x5c',
+			'%c0%ae%c0%ae%c0%af',
+			'%c1%9c',
+			'..%2f',
+			'..%5c',
+			'%2e.',
+			'.%2e',
+		);
+
+		foreach ( $dangerous_patterns as $pattern ) {
+			if ( stripos( $path, $pattern ) !== false ) {
+				$this->mo_media_restriction_log_security_event( 'Dangerous path pattern detected', $path );
+				return false;
+			}
+		}
+
+		if ( substr( $path, 0, 1 ) === '/' || ( strlen( $path ) > 1 && substr( $path, 1, 1 ) === ':' ) ) {
+			return false;
+		}
+
+		$full_path = ABSPATH . DIRECTORY_SEPARATOR . ltrim( $path, '/' );
+
+		$real_path = realpath( $full_path );
+
+		if ( false === $real_path ) {
+			return false;
+		}
+
+		$wp_root = realpath( ABSPATH );
+		if ( strpos( $real_path, $wp_root ) !== 0 ) {
+			return false;
+		}
+
+		$allowed_dirs = $this->mo_media_restriction_get_allowed_directories();
+		$is_allowed   = false;
+
+		foreach ( $allowed_dirs as $allowed_dir ) {
+			$allowed_real_path = realpath( $allowed_dir );
+			if ( false !== $allowed_real_path && strpos( $real_path, $allowed_real_path ) === 0 ) {
+				$is_allowed = true;
+				break;
+			}
+		}
+
+		if ( ! $is_allowed ) {
+			$this->mo_media_restriction_log_security_event( 'Access to disallowed directory attempted', $path );
+			return false;
+		}
+
+		return $real_path;
+	}
+
+	/**
+	 * Get list of allowed directories for file access
+	 *
+	 * @return array Array of allowed directory paths
+	 */
+	private function mo_media_restriction_get_allowed_directories() {
+		$uploads_dir = wp_upload_dir();
+
+		$allowed_dirs = array(
+			$uploads_dir['basedir'],
+		);
+
+		$protected_dir = $uploads_dir['basedir'] . DIRECTORY_SEPARATOR . 'protectedfiles';
+		if ( file_exists( $protected_dir ) ) {
+			$allowed_dirs[] = $protected_dir;
+		}
+
+		$custom_dirs = get_option( 'mo_media_restriction_allowed_dirs', array() );
+		if ( is_array( $custom_dirs ) ) {
+			$allowed_dirs = array_merge( $allowed_dirs, $custom_dirs );
+		}
+
+		$allowed_dirs = apply_filters( 'mo_media_restriction_allowed_directories', $allowed_dirs );
+
+		return array_unique( $allowed_dirs );
+	}
+
+	/**
 	 * Show restricted folder path
 	 *
 	 * @param mixed $redirect_url redirection url.
 	 * @return void
 	 */
 	public function mo_media_show_file_or_folder( $redirect_url ) {
-		$file_path = ABSPATH . DIRECTORY_SEPARATOR . $redirect_url;
-		$file_url  = site_url() . '/' . $redirect_url;
+		$validated_path = $this->mo_media_restriction_validate_path( $redirect_url );
+
+		if ( false === $validated_path ) {
+			wp_die( 'WPMR001: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
+		}
+
+		$file_path     = $validated_path;
+		$relative_path = str_replace( ABSPATH, '', $validated_path );
+		$file_url      = site_url() . '/' . ltrim( $relative_path, '/' );
+
 		if ( file_exists( $file_path ) ) {
 			if ( is_dir( $file_path ) ) {
 				$dh = opendir( $file_path );
 				if ( $dh ) {
-					// reading the contents of the directory.
+
 					$file = readdir( $dh );
 					while ( false !== $file ) {
 						if ( '..' !== $file && '.' !== $file ) {
-							echo "<a href='" . esc_attr( $file_url ) . '/' . esc_attr( $file ) . "'>" . esc_attr( $file ) . '</a><br>';
+							$file_name = sanitize_file_name( $file );
+							if ( $file_name === $file ) {
+								$child_relative_path = ltrim( str_replace( ABSPATH, '', $validated_path ), '/' );
+								$child_url           = site_url() . '/' . $child_relative_path . '/' . $file_name;
+								echo "<a href='" . esc_url( $child_url ) . "'>" . esc_html( $file ) . '</a><br>';
+							}
 						}
 					}
 					closedir( $dh );
 				}
 				exit;
 			} else {
+				$allowed_extensions = array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'txt' );
+				$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+				if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
+					wp_die( 'WPMR002: File type not allowed', 'Access Denied', array( 'response' => 403 ) );
+				}
+
 				header( 'content-type: ' . mime_content_type( $file_path ) );
-				echo esc_attr( wp_remote_get( $file_path ) );
+				readfile( $file_path );
 				exit;
 			}
 		} else {
-			wp_die( 'No such file exist' );
+			wp_die( 'WPMR003: No such file exist' );
 		}
 	}
 
@@ -101,7 +226,7 @@ class Media_Restriction_Admin {
 	 * @return mixed
 	 */
 	public function mo_media_restriction_validate() {
-		if ( isset( $_GET['mo_media_restrict_request'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['mo_media_restrict_request'] ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are not fetching data on form submission.
+		if ( isset( $_GET['mo_media_restrict_request'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['mo_media_restrict_request'] ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- We are implementing custom nonce verification below.
 			if ( is_user_logged_in() === false ) {
 				$restrict_option = get_option( 'mo_mr_redirect_to' );
 				if ( '403-forbidden-page' === $restrict_option ) {
@@ -113,10 +238,101 @@ class Media_Restriction_Admin {
 				}
 				exit;
 			} else {
-				$redirect_url = isset( $_GET['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_GET['redirect_to'] ) ) : site_url(); //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are fetching data from URL and not on form submission.
+				$redirect_url = isset( $_GET['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_GET['redirect_to'] ) ) : site_url();
+
+				if ( empty( $redirect_url ) || strlen( $redirect_url ) > 255 ) {
+					wp_die( 'WPMR005: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
+				}
+
+				$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+				if ( ! wp_verify_nonce( $nonce, 'mo_media_restriction_access' ) ) {
+					$this->mo_media_restriction_log_security_event( 'Invalid nonce for file access', $redirect_url );
+					wp_die( 'WPMR006: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
+				}
+
+				if ( strpos( $redirect_url, '..' ) !== false || strpos( $redirect_url, '/' ) === 0 ) {
+					$this->mo_media_restriction_log_security_event( 'Path traversal attempt detected', $redirect_url );
+					wp_die( 'WPMR007: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
+				}
+
+				if ( ! $this->mo_media_restriction_check_rate_limit() ) {
+					wp_die( 'WPMR008: Too many requests. Please try again later.', 'Rate Limit Exceeded', array( 'response' => 429 ) );
+				}
+
 				$this->mo_media_show_file_or_folder( $redirect_url );
 			}
 		}
+	}
+
+	/**
+	 * Log security events for monitoring
+	 *
+	 * @param string $event_type Type of security event.
+	 * @param string $details Additional details.
+	 * @return void
+	 */
+	private function mo_media_restriction_log_security_event( $event_type, $details ) {
+		$user      = wp_get_current_user();
+		$log_entry = array(
+			'timestamp'  => current_time( 'mysql' ),
+			'user_id'    => $user->ID,
+			'user_login' => $user->user_login,
+			'ip_address' => isset( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+			: 'unknown',
+
+			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
+			: 'unknown',
+			'event_type' => $event_type,
+			'details'    => $details,
+		);
+
+		$existing_logs   = get_option( 'mo_media_restriction_security_logs', array() );
+		$existing_logs[] = $log_entry;
+
+		if ( count( $existing_logs ) > 100 ) {
+			$existing_logs = array_slice( $existing_logs, -100 );
+		}
+
+		update_option( 'mo_media_restriction_security_logs', $existing_logs );
+
+	}
+
+	/**
+	 * Simple rate limiting to prevent abuse
+	 *
+	 * @return bool True if request is allowed, false if rate limited
+	 */
+	private function mo_media_restriction_check_rate_limit() {
+		$user_id        = get_current_user_id();
+		$rate_limit_key = "mo_media_restriction_rate_limit_{$user_id}";
+		$current_time   = time();
+		$window_size    = 60;
+		$max_requests   = 30;
+
+		$user_requests = get_transient( $rate_limit_key );
+
+		if ( false === $user_requests ) {
+			set_transient( $rate_limit_key, array( $current_time ), $window_size );
+			return true;
+		}
+
+		$user_requests = array_filter(
+			$user_requests,
+			function( $timestamp ) use ( $current_time, $window_size ) {
+				return ( $current_time - $timestamp ) < $window_size;
+			}
+		);
+
+		if ( count( $user_requests ) >= $max_requests ) {
+			return false;
+		}
+
+		$user_requests[] = $current_time;
+		set_transient( $rate_limit_key, $user_requests, $window_size );
+
+		return true;
 	}
 
 	/**
@@ -668,6 +884,29 @@ class Media_Restriction_Admin {
 		$rule .= '&nbsp&nbsp&nbspreturn 301 $scheme://$http_host/?mo_media_restrict_request=1&redirect_to=$request_uri;<br>';
 		$rule .= '&nbsp&nbsp&nbsp}<br>';
 		return $rule;
+	}
+
+	/**
+	 * Generate secure URL for file access with proper nonce
+	 *
+	 * @param string $file_path The file path to generate URL for.
+	 * @return string The secure URL with nonce
+	 */
+	public function mo_media_restriction_generate_secure_url( $file_path ) {
+		$file_path = sanitize_text_field( $file_path );
+
+		$nonce = wp_create_nonce( 'mo_media_restriction_access' );
+
+		$secure_url = add_query_arg(
+			array(
+				'mo_media_restrict_request' => '1',
+				'redirect_to'               => $file_path,
+				'_wpnonce'                  => $nonce,
+			),
+			home_url()
+		);
+
+		return $secure_url;
 	}
 
 }
