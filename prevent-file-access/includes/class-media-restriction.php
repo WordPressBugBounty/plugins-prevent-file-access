@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * The file that defines the core plugin class
  *
@@ -131,7 +132,7 @@ class Media_Restriction {
 	private function set_locale() {
 
 		$plugin_i18n = new Media_Restriction_I18n();
-
+		// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
 
 	}
@@ -170,6 +171,7 @@ class Media_Restriction {
 	 */
 	public function miniorange_media_menu() {
 		// Add miniOrange plugin to the menu.
+		// phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- Legacy text domain kept intentionally for backward compatibility.
 		$page = add_menu_page( 'Prevent Files / Folders Access' . __( 'Configure Prevent Files / Folders Access', 'mo_media_restrict' ), 'Prevent Files /	 Folders Access', 'administrator', 'mo_media_restrict', array( $this, 'mo_media_restrict_options' ), plugin_dir_url( __FILE__ ) . '../admin/images/miniorange.png' );
 	}
 

@@ -1,4 +1,6 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -139,6 +141,20 @@ class Media_Restriction_Admin {
 
 		return $real_path;
 	}
+	/**
+	 * Initialize and return the WP_Filesystem instance.
+	 * @return WP_Filesystem_Base|false
+	 */
+	private function mo_media_restriction_get_filesystem() {
+		global $wp_filesystem;
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! WP_Filesystem() ) {
+			return false;
+		}
+		return $wp_filesystem;
+	}
 
 	/**
 	 * Get list of allowed directories for file access
@@ -212,7 +228,8 @@ class Media_Restriction_Admin {
 				}
 
 				header( 'content-type: ' . mime_content_type( $file_path ) );
-				readfile( $file_path );
+				$wp_filesystem = $this->mo_media_restriction_get_filesystem();
+				echo $wp_filesystem->get_contents( $file_path ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Binary/raw file content output.
 				exit;
 			}
 		} else {
@@ -417,8 +434,12 @@ class Media_Restriction_Admin {
 	private function mo_media_restrict_remove_rules() {
 		$home_path     = get_home_path();
 		$htaccess_file = $home_path . '.htaccess';
+		$wp_filesystem = $this->mo_media_restriction_get_filesystem();
 
-		if ( file_exists( $htaccess_file ) && is_writable( $home_path ) && is_writeable( $htaccess_file ) ) {
+		if (
+			( file_exists( $htaccess_file ) && $wp_filesystem->is_writable( $htaccess_file ) ) ||
+			( ! file_exists( $htaccess_file ) && $wp_filesystem->is_writable( $home_path ) )
+		) {
 			insert_with_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION', array() );
 			return true;
 		} else {
@@ -436,7 +457,9 @@ class Media_Restriction_Admin {
 		$home_path      = get_home_path();
 		$htaccess_file  = $home_path . '.htaccess';
 		$permalink_type = get_option( 'permalink_structure' );
-		if ( file_exists( $htaccess_file ) && is_writable( $home_path ) && is_writeable( $htaccess_file ) ) {
+		$wp_filesystem  = $this->mo_media_restriction_get_filesystem();
+
+		if ( file_exists( $htaccess_file ) && $wp_filesystem->is_writable( $home_path ) && $wp_filesystem->is_writable( $htaccess_file ) ) {
 			$htaccess_file_backup = $home_path . '.htaccess-backup';
 			if ( ! file_exists( $htaccess_file_backup ) ) {
 				copy( $htaccess_file, $home_path . '.htaccess-backup' );
@@ -446,7 +469,7 @@ class Media_Restriction_Admin {
 				flush_rewrite_rules();
 			}
 		} else {
-			if ( is_writable( $home_path ) ) {
+			if ( $wp_filesystem->is_writable( $home_path ) ) {
 				$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
 				flush_rewrite_rules();
 				copy( $htaccess_file, $home_path . '.htaccess-backup' );
@@ -693,8 +716,17 @@ class Media_Restriction_Admin {
 								$target_file = $protectedfiles . DIRECTORY_SEPARATOR . basename( $filename );
 								if ( isset( $_FILES['fileToUpload']['tmp_name'] ) && ! empty( $_FILES['fileToUpload']['tmp_name'] ) ) {
 									// The 'tmp_name' index exists and is not empty, so we can use it safely.
-									move_uploaded_file( sanitize_text_field( $_FILES['fileToUpload']['tmp_name'] ), $target_file ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Here we are setting a folder path based on slashes so please ignore ulslash.
-									echo "<div class='mo_media_restriction_success_box'><b>File uploaded successfully.</b></div>";
+									$tmp_name      = $_FILES['fileToUpload']['tmp_name']; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Here we are setting a folder path based on slashes so please ignore ulslash.
+									$wp_filesystem = $this->mo_media_restriction_get_filesystem();
+									if ( ! $wp_filesystem ) {
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Filesystem initialization failed.', 'media-restriction' ) . '</b></div>';
+										return;
+									}
+									if ( is_uploaded_file( $tmp_name ) && $wp_filesystem->move( $tmp_name, $target_file ) ) {
+										echo '<div class="mo_media_restriction_success_box"><b>' . esc_html__( 'File uploaded successfully.', 'media-restriction' ) . '</b></div>';
+									} else {
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error moving the uploaded file.', 'media-restriction' ) . '</b></div>';
+									}
 								} else {
 									echo "<div class='mo_media_restriction_error_box'><b>Error uploading the file.</b></div>";
 								}

@@ -540,6 +540,13 @@ class Miniorange_Media_Restriction_Customer {
 	 * @return mixed
 	 */
 	public function mo_media_restriction_check_internet_connection() {
-		return (bool) @fsockopen( 'login.xecurify.com', 443, $errno, $errstr, 5 ); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fsockopen, WordPress.PHP.NoSilencedErrors.Discouraged -- Using default PHP function to check socket connection.
+		$response = wp_remote_head(
+			'https://login.xecurify.com',
+			array(
+				'timeout'   => 5,
+				'sslverify' => true,
+			)
+		);
+		return ! is_wp_error( $response );
 	}
 }

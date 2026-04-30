@@ -1,4 +1,6 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Provide a admin area view for the plugin
  *
@@ -143,7 +145,7 @@ function mo_media_restrict_page_ui() {
 			<br>
 	<div class="mo_media_restriction_security_card">
 		<div class="inner-block"> 
-			<img src="https://i.postimg.cc/rpdyXn4c/1519864451822-1-removebg-preview.png" height="65px" width="65px" style=" width: 30px;height: 30px;">
+			<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . '../images/miniorange_logo.png' ); ?>" alt="miniOrange" style="width: 30px; height: 30px;">
 			<p class="mo_media_restriction_reverse_proxy_card" >Reverse Proxy</p>
 			<p style="color: #838383;">miniOrange</p>
 			<hr style="margin-top: 10px; margin-bottom: 15px;">

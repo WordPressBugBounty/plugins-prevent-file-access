@@ -32,7 +32,7 @@ class Media_Restriction_I18n {
 	 * @since    1.1.1
 	 */
 	public function load_plugin_textdomain() {
-
+		// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
 		load_plugin_textdomain(
 			'media-restriction',
 			false,
