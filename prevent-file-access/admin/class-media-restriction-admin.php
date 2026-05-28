@@ -412,7 +412,22 @@ class Media_Restriction_Admin {
 			wp_enqueue_script( 'mo_media_admin_fontawesome_script', plugins_url( 'js/fontawesome.js', __FILE__ ), array(), $this->version, false );
 		}
 	}
-
+	/**
+	 * Maps allowed file extensions to their permitted MIME types.
+	 * Single source of truth for both extension and MIME validation.
+	 *
+	 * @return array<string, string|array<int, string>>
+	 */
+	private function mo_media_restriction_get_allowed_mime_types() {
+		return array(
+			'doc'  => array( 'application/msword', 'application/octet-stream' ),
+			'docx' => array( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip' ),
+			'pdf'  => 'application/pdf',
+			'png'  => 'image/png',
+			'jpg'  => array( 'image/jpeg' ),
+			'gif'  => 'image/gif',
+		);
+	}
 	/**
 	 * On Post field check values are empty or not
 	 *
@@ -700,42 +715,70 @@ class Media_Restriction_Admin {
 					}
 				} elseif ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_file_upload' && isset( $_REQUEST['mo_media_restriction_file_upload_field'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_file_upload_field'] ) ), 'mo_media_restriction_file_upload_form' ) ) {
 					$filename            = isset( $_FILES['fileToUpload']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['fileToUpload']['name'] ) ) : '';
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tmp_name must match PHP's path byte-for-byte; wp_unslash/stripslashes breaks Windows paths (e.g. \t in \tmp\). is_uploaded_file() validates.
+					$tmp_name            = isset( $_FILES['fileToUpload']['tmp_name'] ) && is_string( $_FILES['fileToUpload']['tmp_name'] ) ? $_FILES['fileToUpload']['tmp_name'] : '';
 					$extension_lowercase = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
-					$whitelist           = array( 'pdf', 'png', 'jpg', 'doc', 'gif' );
-					if ( ! $this->mo_media_restriction_check_empty_or_null( $filename ) && ! validate_file( $filename ) && in_array( $extension_lowercase, $whitelist, true ) ) {
-						$upload_dir = wp_upload_dir();
-						if ( $upload_dir && isset( $upload_dir['basedir'] ) ) {
-							$base_upload_dir = $upload_dir['basedir'];
-							$protectedfiles  = $base_upload_dir . DIRECTORY_SEPARATOR . 'protectedfiles';
-							if ( false !== $upload_dir['error'] ) {
-								echo "<div class='mo_media_restriction_error_box'><b style='color:red'>" . esc_attr( $upload_dir['error'] ) . '</b></div>';
-							} else {
-								if ( ! file_exists( $protectedfiles ) && ! is_dir( $protectedfiles ) ) {
-									wp_mkdir_p( $protectedfiles, 0775, true );
-								}
-								$target_file = $protectedfiles . DIRECTORY_SEPARATOR . basename( $filename );
-								if ( isset( $_FILES['fileToUpload']['tmp_name'] ) && ! empty( $_FILES['fileToUpload']['tmp_name'] ) ) {
-									// The 'tmp_name' index exists and is not empty, so we can use it safely.
-									$tmp_name      = $_FILES['fileToUpload']['tmp_name']; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Here we are setting a folder path based on slashes so please ignore ulslash.
-									$wp_filesystem = $this->mo_media_restriction_get_filesystem();
-									if ( ! $wp_filesystem ) {
-										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Filesystem initialization failed.', 'media-restriction' ) . '</b></div>';
+					$allowed_mime_map    = $this->mo_media_restriction_get_allowed_mime_types();
+					$whitelist = array_keys( $allowed_mime_map );
+
+					// Extension must be in the whitelist.
+					if ( $this->mo_media_restriction_check_empty_or_null( $filename ) || validate_file( $filename ) || ! in_array( $extension_lowercase, $whitelist, true ) ) {
+						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Invalid file name or type.', $this->plugin_name ) . '</b></div>';
+					} elseif ( empty( $tmp_name ) || ! is_uploaded_file( $tmp_name ) ) {
+						//Confirm this is a genuine PHP upload before inspecting content.
+						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error uploading the file.', $this->plugin_name ) . '</b></div>';
+					} else {
+						//Detect actual MIME type from binary magic bytes.
+						$detected_mime = false;
+						if ( function_exists( 'finfo_open' ) ) {
+							$finfo         = finfo_open( FILEINFO_MIME_TYPE );
+							$detected_mime = finfo_file( $finfo, $tmp_name );
+							finfo_close( $finfo );
+						} else {
+							error_log( 'media-restriction.php: finfo PHP extension is not available. Upload rejected.' );
+							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Server configuration error: cannot validate file type. Upload rejected.', $this->plugin_name ) . '</b></div>';
+							return;
+						}
+
+						if ( false === $detected_mime || '' === $detected_mime ) {
+							error_log( 'media-restriction.php: MIME detection returned empty result for upload: ' . $filename );
+							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Could not determine file type. Upload rejected.', $this->plugin_name ) . '</b></div>';
+						} elseif ( ! isset( $allowed_mime_map[ $extension_lowercase ] ) || ! in_array( $detected_mime, (array) $allowed_mime_map[ $extension_lowercase ], true ) ) {
+							//Detected MIME must match what this extension permits.
+							wp_die( 'File content does not match its extension.', 'Access Denied', array( 'response' => 403 ) );
+						} else {
+							// All gates passed: proceed with upload.
+							$upload_dir = wp_upload_dir();
+							if ( $upload_dir && isset( $upload_dir['basedir'] ) ) {
+								$base_upload_dir = $upload_dir['basedir'];
+								$protectedfiles  = $base_upload_dir . DIRECTORY_SEPARATOR . 'protectedfiles';
+								if ( false !== $upload_dir['error'] ) {
+									echo "<div class='mo_media_restriction_error_box'><b style='color:red'>" . esc_html( $upload_dir['error'] ) . '</b></div>';
+								} else {
+									// Check if path exists but is not a directory.
+									if ( file_exists( $protectedfiles ) && ! is_dir( $protectedfiles ) ) {
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Upload path exists but is not a directory.', $this->plugin_name ) . '</b></div>';
 										return;
 									}
-									if ( is_uploaded_file( $tmp_name ) && $wp_filesystem->move( $tmp_name, $target_file ) ) {
-										echo '<div class="mo_media_restriction_success_box"><b>' . esc_html__( 'File uploaded successfully.', 'media-restriction' ) . '</b></div>';
-									} else {
-										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error moving the uploaded file.', 'media-restriction' ) . '</b></div>';
+
+									// Create directory if it does not exist.
+									if ( ! is_dir( $protectedfiles ) && ! wp_mkdir_p( $protectedfiles ) ) {
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Failed to create directory. Please check permissions.', $this->plugin_name ) . '</b></div>';
+										return;
 									}
-								} else {
-									echo "<div class='mo_media_restriction_error_box'><b>Error uploading the file.</b></div>";
+
+									$target_file = $protectedfiles . DIRECTORY_SEPARATOR . basename( $filename );
+									// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Slashes must be preserved for a filesystem path.
+									if ( move_uploaded_file( $tmp_name, $target_file ) ) {
+										echo '<div class="mo_media_restriction_success_box"><b>' . esc_html__( 'File uploaded successfully.', $this->plugin_name ) . '</b></div>';
+									} else {
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error moving the uploaded file.', $this->plugin_name ) . '</b></div>';
+									}
 								}
+							} else {
+								echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( "Directory doesn't exist.", $this->plugin_name ) . '</b></div>';
 							}
-						} else {
-							echo "<div class='mo_media_restriction_error_box'><b>Directory doesn\'t exist.</b></div>";
 						}
-					} else {
-						echo "<div class='mo_media_restriction_error_box'><b>Invalid file name.</b></div>";
 					}
 				} elseif ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_contact_us' && isset( $_REQUEST['mo_media_restriction_contact_us_field'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_contact_us_field'] ) ), 'mo_media_restriction_contact_us_form' ) ) {
 					// contact us.
