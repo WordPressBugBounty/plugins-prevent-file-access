@@ -1,11 +1,11 @@
 === Prevent Files / Folders Access ===
 Contributors: cyberlord92
 Donate link: https://miniorange.com
-Tags: protect uploads, secure-files, content-restriction, protect-folders, media restriction, media management, download logs
-Requires at least: 3.0.1
+Tags: protect uploads, secure-files, content-restriction, protect-folders, media restriction
+Requires at least: 4.7
 Tested up to: 7.0
 Requires PHP: 5.6
-Stable tag: 2.6.3
+Stable tag: 2.6.4
 License: Expat
 License URI: https://plugins.miniorange.com/mit-license
 
@@ -142,6 +142,10 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 6. Contact us or support
 
 == Changelog ==
+= 2.6.4 = 
+* Security fixes
+* New improved UI
+
 = 2.6.3 = 
 * Fixed file extension upload issue.
 * Added Compatibility with WordPress 7.0
@@ -236,6 +240,11 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.6.4 = 
+* Security fixes
+* New improved UI
+
 = 2.6.3 = 
 * Fixed file extension upload issue.
 * Added Compatibility with WordPress 7.0

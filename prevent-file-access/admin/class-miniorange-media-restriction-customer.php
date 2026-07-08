@@ -32,17 +32,11 @@ class Miniorange_Media_Restriction_Customer {
 	public $phone;
 
 	/**
-	 * Default customer key.
-	 *
-	 * @var string
+	 * Shared miniOrange customer key used before a site-specific account is registered.
+	 * These are intentional public/shared credentials for the free-tier API.
 	 */
-	private $default_customer_key = '16555';
-	/**
-	 * Default API key.
-	 *
-	 * @var string
-	 */
-	private $default_api_key = 'fFd2XcvTGDemZvbw1bcUesNJWEqKbbUq';
+	const DEFAULT_CUSTOMER_KEY = '16555';
+	const DEFAULT_API_KEY      = 'fFd2XcvTGDemZvbw1bcUesNJWEqKbbUq';
 
 	/**
 	 * Create customer.
@@ -77,8 +71,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args         = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -116,8 +110,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args         = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -148,8 +142,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args    = array(
 			'method'      => 'POST',
 			'body'        => array(),
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -177,8 +171,8 @@ class Miniorange_Media_Restriction_Customer {
 	public function send_otp_token( $email, $phone, $send_to_email = true, $send_to_phone = false ) {
 		$url = get_option( 'host_name' ) . '/moas/api/auth/challenge';
 
-		$customer_key = $this->default_customer_key;
-		$api_key      = $this->default_api_key;
+		$customer_key = self::DEFAULT_CUSTOMER_KEY;
+		$api_key      = self::DEFAULT_API_KEY;
 
 		$username = get_option( 'mo_media_restriction_admin_email' );
 		$phone    = get_option( 'mo_media_restriction_admin_phone' );
@@ -188,10 +182,6 @@ class Miniorange_Media_Restriction_Customer {
 		/* Creating the Hash using SHA-512 algorithm */
 		$string_to_hash = $customer_key . $current_time_in_millis . $api_key;
 		$hash_value     = hash( 'sha512', $string_to_hash );
-
-		$customer_key_header  = 'Customer-Key: ' . $customer_key;
-		$timestamp_header     = 'Timestamp: ' . $current_time_in_millis;
-		$authorization_header = 'Authorization: ' . $hash_value;
 
 		if ( $send_to_email ) {
 			$fields = array(
@@ -214,8 +204,8 @@ class Miniorange_Media_Restriction_Customer {
 			$args                     = array(
 				'method'      => 'POST',
 				'body'        => $field_string,
-				'timeout'     => '15',
-				'redirection' => '5',
+				'timeout'     => 15,
+				'redirection' => 5,
 				'httpversion' => '1.0',
 				'blocking'    => true,
 				'headers'     => $headers,
@@ -257,8 +247,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args    = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -285,8 +275,8 @@ class Miniorange_Media_Restriction_Customer {
 	public function validate_otp_token( $transaction_id, $otp_token ) {
 		$url = get_option( 'host_name' ) . '/moas/api/auth/validate';
 
-		$customer_key = $this->default_customer_key;
-		$api_key      = $this->default_api_key;
+		$customer_key = self::DEFAULT_CUSTOMER_KEY;
+		$api_key      = self::DEFAULT_API_KEY;
 
 		$username = get_option( 'mo_media_restriction_admin_email' );
 
@@ -296,12 +286,6 @@ class Miniorange_Media_Restriction_Customer {
 		/* Creating the Hash using SHA-512 algorithm */
 		$string_to_hash = $customer_key . $current_time_in_millis . $api_key;
 		$hash_value     = hash( 'sha512', $string_to_hash );
-
-		$customer_key_header  = 'Customer-Key: ' . $customer_key;
-		$timestamp_header     = 'Timestamp: ' . $current_time_in_millis;
-		$authorization_header = 'Authorization: ' . $hash_value;
-
-		$fields = '';
 
 		// *check for otp over sms/email
 		$fields = array(
@@ -318,8 +302,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args                     = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -344,8 +328,7 @@ class Miniorange_Media_Restriction_Customer {
 	 * @return boolean|null
 	 */
 	public function submit_contact_us( $email, $phone, $query ) {
-		global $current_user;
-		wp_get_current_user();
+		$current_user = wp_get_current_user();
 		$query        = '[WP Prevent Files / Folders Plugin - ' . MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION . ' ] - ' . $query;
 		$fields       = array(
 			'firstName' => $current_user->user_firstname,
@@ -368,8 +351,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args    = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -400,16 +383,12 @@ class Miniorange_Media_Restriction_Customer {
 		$url = get_option( 'host_name' ) . '/moas/api/notify/send';
 
 		$last_requested_api = get_option( 'mo_media_restriction_last_requested_api' );
-		$customer_key       = $this->default_customer_key;
-		$api_key            = $this->default_api_key;
+		$customer_key       = self::DEFAULT_CUSTOMER_KEY;
+		$api_key            = self::DEFAULT_API_KEY;
 
 		$current_time_in_millis = self::get_timestamp();
 		$string_to_hash         = $customer_key . $current_time_in_millis . $api_key;
 		$hash_value             = hash( 'sha512', $string_to_hash );
-		$customer_key_header    = 'Customer-Key: ' . $customer_key;
-		$timestamp_header       = 'Timestamp: ' . $current_time_in_millis;
-		$authorization_header   = 'Authorization: ' . $hash_value;
-		$from_email             = $email;
 		$site_url               = site_url();
 		$apis                   = '';
 
@@ -418,18 +397,17 @@ class Miniorange_Media_Restriction_Customer {
 				$apis .= $method . ' ' . $api . '<br>';
 			}
 		}
-		global $user;
 		$user  = wp_get_current_user();
 		$query = '[WP Prevent Files / Folders Plugin - ' . MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION . ' ] : ' . $message;
 
-		$content = '<div >Hello, <br><br>First Name :' . $user->user_firstname . '<br><br>Last  Name :' . $user->user_lastname . '   <br><br>Company :<a href="' . $site_url . '" target="_blank" >' . $site_url . '</a><br><br>Phone Number :' . $phone . '<br><br>Email :<a href="mailto:' . $from_email . '" target="_blank">' . $from_email . '</a><br><br>Query :' . $query . '</div>';
+		$content = '<div >Hello, <br><br>First Name :' . esc_html( $user->user_firstname ) . '<br><br>Last  Name :' . esc_html( $user->user_lastname ) . '   <br><br>Company :<a href="' . esc_url( $site_url ) . '" target="_blank" >' . esc_html( $site_url ) . '</a><br><br>Phone Number :' . esc_html( $phone ) . '<br><br>Email :<a href="mailto:' . esc_attr( $email ) . '" target="_blank">' . esc_html( $email ) . '</a><br><br>Query :' . esc_html( $query ) . '</div>';
 
 		$fields                   = array(
 			'customerKey' => $customer_key,
 			'sendEmail'   => true,
 			'email'       => array(
 				'customerKey' => $customer_key,
-				'fromEmail'   => $from_email,
+				'fromEmail'   => $email,
 				'bccEmail'    => 'oauthsupport@xecurify.com',
 				'fromName'    => 'miniOrange',
 				'toEmail'     => 'oauthsupport@xecurify.com',
@@ -446,8 +424,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args                     = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,
@@ -480,29 +458,22 @@ class Miniorange_Media_Restriction_Customer {
 		}
 		$url = get_option( 'host_name' ) . '/moas/api/notify/send';
 
-		$customer_key = $this->default_customer_key;
-		$api_key      = $this->default_api_key;
+		$customer_key = self::DEFAULT_CUSTOMER_KEY;
+		$api_key      = self::DEFAULT_API_KEY;
 
 		$current_time_in_millis = self::get_timestamp();
 		$string_to_hash         = $customer_key . $current_time_in_millis . $api_key;
 		$hash_value             = hash( 'sha512', $string_to_hash );
-		$customer_key_header    = 'Customer-Key: ' . $customer_key;
-		$timestamp_header       = 'Timestamp: ' . $current_time_in_millis;
-		$authorization_header   = 'Authorization: ' . $hash_value;
-		$from_email             = $email;
-		$site_url               = site_url();
-
-		global $user;
-		$user     = wp_get_current_user();
+		$site_url = site_url();
 		$use_case = '[WP Prevent Files / Folders Plugin - ' . MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION . ' ] : ' . $message;
 
-		$content                  = '<div>Hello, <br><br>Demo Plan :' . $demo_plan . '<br><br>Email :<a href="mailto:' . $from_email . '" target="_blank">' . $from_email . '</a><br><br>Usecase :' . $use_case . '</div>';
+		$content                  = '<div>Hello, <br><br>Demo Plan :' . $demo_plan . '<br><br>Email :<a href="mailto:' . $email . '" target="_blank">' . $email . '</a><br><br>Usecase :' . $use_case . '</div>';
 		$fields                   = array(
 			'customerKey' => $customer_key,
 			'sendEmail'   => true,
 			'email'       => array(
 				'customerKey' => $customer_key,
-				'fromEmail'   => $from_email,
+				'fromEmail'   => $email,
 				'bccEmail'    => 'oauthsupport@xecurify.com',
 				'fromName'    => 'miniOrange',
 				'toEmail'     => 'oauthsupport@xecurify.com',
@@ -519,8 +490,8 @@ class Miniorange_Media_Restriction_Customer {
 		$args                     = array(
 			'method'      => 'POST',
 			'body'        => $field_string,
-			'timeout'     => '15',
-			'redirection' => '5',
+			'timeout'     => 15,
+			'redirection' => 5,
 			'httpversion' => '1.0',
 			'blocking'    => true,
 			'headers'     => $headers,

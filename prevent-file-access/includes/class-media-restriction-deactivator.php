@@ -33,16 +33,18 @@ class Media_Restriction_Deactivator {
 		delete_option( 'mo_media_restriction_admin_customer_key' );
 		delete_option( 'mo_media_restriction_new_user' );
 
+		if ( ! function_exists( 'get_home_path' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'insert_with_markers' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+		}
+
 		$home_path     = get_home_path();
-		$htaccess_file = $home_path . '.htaccess'; // Specify the path to your .htaccess file.
+		$htaccess_file = $home_path . '.htaccess';
 
-		// Read the existing .htaccess file content.
-		$existing_content = file_get_contents( $htaccess_file );
-
-		// Remove the content between BEGIN and END MINIORANGE MEDIA RESTRICTION.
-		$updated_content = preg_replace( '/# BEGIN MINIORANGE MEDIA RESTRICTION(.*?)# END MINIORANGE MEDIA RESTRICTION/ms', '', $existing_content );
-		// Write the updated content back to the .htaccess file.
-		file_put_contents( $htaccess_file, $updated_content );
+		if ( file_exists( $htaccess_file ) && wp_is_writable( $htaccess_file ) ) {
+			insert_with_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION', array() );
+		}
 	}
-
 }

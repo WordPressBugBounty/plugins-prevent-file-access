@@ -3,7 +3,7 @@
  * Plugin Name: Prevent Files / Folders Access
  * Plugin URI: http://miniorange.com
  * Description: Allows to protect your files and folders (wp-content, uploads, images, pdf, documents) from public access, Role base folder access, User base folder access, giving access to only logged in users.
- * Version: 2.6.3
+ * Version: 2.6.4
  * Author: miniOrange
  * Author URI: http://miniorange.com
  * License: Expat
@@ -22,7 +22,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.1.1 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION', '2.6.3' );
+define( 'MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION', '2.6.4' );
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-media-restriction-activator.php
@@ -74,6 +74,5 @@ function run_media_restriction() {
 
 	$plugin = new Media_Restriction();
 	$plugin->run();
-
 }
 run_media_restriction();

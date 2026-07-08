@@ -1,5 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * The admin-specific functionality of the plugin.
@@ -57,11 +59,7 @@ class Media_Restriction_Admin {
 	public function __construct( $plugin_name, $version ) {
 		$this->plugin_name = $plugin_name;
 		$this->version     = $version;
-		update_option( 'host_name', 'https://login.xecurify.com' );
 		add_action( 'init', array( $this, 'mo_media_restriction_validate' ) );
-		if ( get_option( 'mo_enable_media_restriction' ) === false ) {
-			update_option( 'mo_enable_media_restriction', 1 );
-		}
 	}
 
 	/**
@@ -204,9 +202,7 @@ class Media_Restriction_Admin {
 			if ( is_dir( $file_path ) ) {
 				$dh = opendir( $file_path );
 				if ( $dh ) {
-
-					$file = readdir( $dh );
-					while ( false !== $file ) {
+					while ( false !== ( $file = readdir( $dh ) ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
 						if ( '..' !== $file && '.' !== $file ) {
 							$file_name = sanitize_file_name( $file );
 							if ( $file_name === $file ) {
@@ -261,8 +257,11 @@ class Media_Restriction_Admin {
 					wp_die( 'WPMR005: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 				}
 
+				// The htaccess redirect that lands here cannot generate a nonce, so access is gated on the
+				// is_user_logged_in() check above. A nonce is only verified if one was actually supplied
+				// (e.g. via mo_media_restriction_generate_secure_url()).
 				$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
-				if ( ! wp_verify_nonce( $nonce, 'mo_media_restriction_access' ) ) {
+				if ( '' !== $nonce && ! wp_verify_nonce( $nonce, 'mo_media_restriction_access' ) ) {
 					$this->mo_media_restriction_log_security_event( 'Invalid nonce for file access', $redirect_url );
 					wp_die( 'WPMR006: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 				}
@@ -312,8 +311,7 @@ class Media_Restriction_Admin {
 			$existing_logs = array_slice( $existing_logs, -100 );
 		}
 
-		update_option( 'mo_media_restriction_security_logs', $existing_logs );
-
+		update_option( 'mo_media_restriction_security_logs', $existing_logs, 'no' );
 	}
 
 	/**
@@ -337,7 +335,7 @@ class Media_Restriction_Admin {
 
 		$user_requests = array_filter(
 			$user_requests,
-			function( $timestamp ) use ( $current_time, $window_size ) {
+			function ( $timestamp ) use ( $current_time, $window_size ) {
 				return ( $current_time - $timestamp ) < $window_size;
 			}
 		);
@@ -351,6 +349,8 @@ class Media_Restriction_Admin {
 
 		return true;
 	}
+
+
 
 	/**
 	 * Register the stylesheets for the admin area.
@@ -378,7 +378,7 @@ class Media_Restriction_Admin {
 		}
 		if ( isset( $_REQUEST['page'] ) && 'mo_media_restrict' === sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce recommendation because we are fetching data from URL directly and not form submission.
 			wp_enqueue_style( 'mo_media_admin_bootstrap_style', plugins_url( 'css/bootstrap.min.css', __FILE__ ), array(), $this->version );
-			wp_enqueue_style( 'mo_media_admin_font_awesome_style', plugins_url( 'css/font-awesome.min.css', __FILE__ ), array(), $this->version );
+			wp_enqueue_style( 'dashicons' );
 			wp_enqueue_style( 'mo_media_admin_media_phone_style', plugins_url( 'css/phone.min.css', __FILE__ ), array(), $this->version );
 			wp_enqueue_style( 'mo_media_admin_media_settings_style', plugins_url( 'css/media-restriction-admin.css', __FILE__ ), array(), $this->version );
 			wp_enqueue_style( 'mo_media_admin_settings_style', plugins_url( 'css/style.min.css', __FILE__ ), array(), $this->version );
@@ -409,7 +409,6 @@ class Media_Restriction_Admin {
 			wp_enqueue_script( 'mo_media_admin_media_phone_script', plugins_url( 'js/phone.js', __FILE__ ), array(), $this->version, false );
 			wp_enqueue_script( 'mo_media_admin_custom_settings_script', plugins_url( 'js/custom.min.js', __FILE__ ), array(), $this->version, false );
 			wp_enqueue_script( 'mo_media_admin_table_script', plugins_url( 'js/jquery.dataTables.min.js', __FILE__ ), array(), $this->version, false );
-			wp_enqueue_script( 'mo_media_admin_fontawesome_script', plugins_url( 'js/fontawesome.js', __FILE__ ), array(), $this->version, false );
 		}
 	}
 	/**
@@ -474,56 +473,47 @@ class Media_Restriction_Admin {
 		$permalink_type = get_option( 'permalink_structure' );
 		$wp_filesystem  = $this->mo_media_restriction_get_filesystem();
 
-		if ( file_exists( $htaccess_file ) && $wp_filesystem->is_writable( $home_path ) && $wp_filesystem->is_writable( $htaccess_file ) ) {
+		if ( $wp_filesystem->exists( $htaccess_file ) && $wp_filesystem->is_writable( $home_path ) && $wp_filesystem->is_writable( $htaccess_file ) ) {
 			$htaccess_file_backup = $home_path . '.htaccess-backup';
-			if ( ! file_exists( $htaccess_file_backup ) ) {
-				copy( $htaccess_file, $home_path . '.htaccess-backup' );
+			if ( ! $wp_filesystem->exists( $htaccess_file_backup ) ) {
+				$wp_filesystem->copy( $htaccess_file, $home_path . '.htaccess-backup' );
 			}
 			if ( empty( $permalink_type ) ) {
 				$wp_rewrite->set_permalink_structure( '/%year%/%monthnum%/%day%/%postname%/' );
 				flush_rewrite_rules();
 			}
+		} elseif ( $wp_filesystem->is_writable( $home_path ) ) {
+			$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
+			flush_rewrite_rules();
+			$wp_filesystem->copy( $htaccess_file, $home_path . '.htaccess-backup' );
 		} else {
-			if ( $wp_filesystem->is_writable( $home_path ) ) {
-				$wp_rewrite->set_permalink_structure( '/%category%/%postname%/' );
-				flush_rewrite_rules();
-				copy( $htaccess_file, $home_path . '.htaccess-backup' );
-			} else {
-				return false;
-			}
+			return false;
 		}
 
 		$mo_media_restriction_file_types = get_option( 'mo_media_restriction_file_types' );
+		// Strip everything except lowercase letters, digits, and the pipe separator to prevent htaccess injection.
+		$mo_media_restriction_file_types = preg_replace( '/[^a-zA-Z0-9|]/', '', (string) $mo_media_restriction_file_types );
 		if ( empty( $mo_media_restriction_file_types ) ) {
 			$mo_media_restriction_file_types = 'png|jpg|gif|pdf|doc';
 		}
-		$restrict_option = get_option( 'mo_mr_restrict_option' );
-		if ( empty( $restrict_option ) ) {
-			$restrict_option = 'display-custom-page';
-		}
-		$redirect_to = get_option( 'mo_mr_redirect_to' );
-		if ( empty( $redirect_to ) ) {
-			$redirect_to = '403-forbidden-page';
+
+		// Scope matching to the uploads directory so plugin/theme bundled assets (e.g. this plugin's own
+		// admin/images/logo.png) that happen to share a restricted extension are never intercepted.
+		$uploads_dir      = wp_upload_dir();
+		$uploads_relative = trim( str_replace( ABSPATH, '', $uploads_dir['basedir'] ), '/' );
+		$uploads_relative = preg_replace( '/[^a-zA-Z0-9_\-\/]/', '', $uploads_relative );
+		if ( empty( $uploads_relative ) ) {
+			$uploads_relative = 'wp-content/uploads';
 		}
 
+		// Every matching request is routed through mo_media_restriction_validate(), which performs a
+		// real is_user_logged_in() check in PHP. Apache/htaccess cannot verify a WordPress auth cookie's
+		// HMAC, so it must never decide access on its own (see mo_media_restriction_validate()).
 		$rules  = 'RewriteCond %{REQUEST_FILENAME} ^.*(' . $mo_media_restriction_file_types . ")$ [OR]\n";
 		$rules .= 'RewriteCond %{REQUEST_URI} protectedfiles ';
 		$rules .= "\n";
-		$rules .= "RewriteCond %{HTTP_COOKIE} !^.*wordpress_logged_in.*$ [NC]\n";
-
-		$choose_server = get_option( 'mo_media_restriction_choose_server', 'apache' );
-
-		if ( 'godaddy' === $choose_server ) {
-			$rules .= 'RewriteRule ^(.*)$ ./?mo_media_restrict_request=1&redirect_to=$1 [R=302,NC]';
-		} else {
-			if ( 'display-custom-page' === $restrict_option ) {
-				if ( '403-forbidden-page' === $redirect_to ) {
-					$rules .= 'RewriteRule . - [R=403,L]';
-				} else {
-					$rules .= 'RewriteRule . ./' . $redirect_to . ' [R=302,NC]';
-				}
-			}
-		}
+		$rules .= 'RewriteCond %{REQUEST_URI} ' . $uploads_relative . " [NC]\n";
+		$rules .= 'RewriteRule ^(.*)$ ./?mo_media_restrict_request=1&redirect_to=$1 [R=302,NC]';
 
 		if ( ! $this->mo_media_restrict_remove_rules() ) {
 			return false;
@@ -538,7 +528,7 @@ class Media_Restriction_Admin {
 	 * @return void
 	 */
 	public function mo_media_restriction_success_message() {
-		$class   = 'error';
+		$class   = 'updated';
 		$message = get_option( 'mo_media_restriction_message' );
 		echo "<div class='" . esc_attr( $class ) . "'> <p>" . esc_attr( $message ) . '</p></div>';
 	}
@@ -549,7 +539,7 @@ class Media_Restriction_Admin {
 	 * @return void
 	 */
 	public function mo_media_restriction_error_message() {
-		$class   = 'updated';
+		$class   = 'error';
 		$message = get_option( 'mo_media_restriction_message' );
 		echo "<div class='" . esc_attr( $class ) . "'><p>" . esc_attr( $message ) . '</p></div>';
 	}
@@ -560,8 +550,8 @@ class Media_Restriction_Admin {
 	 * @return void
 	 */
 	private function mo_media_restriction_show_success_message() {
-		remove_action( 'admin_notices', array( $this, 'mo_media_restriction_success_message' ) );
-		add_action( 'admin_notices', array( $this, 'mo_media_restriction_error_message' ) );
+		remove_action( 'admin_notices', array( $this, 'mo_media_restriction_error_message' ) );
+		add_action( 'admin_notices', array( $this, 'mo_media_restriction_success_message' ) );
 	}
 
 	/**
@@ -570,8 +560,8 @@ class Media_Restriction_Admin {
 	 * @return void
 	 */
 	private function mo_media_restriction_show_error_message() {
-		remove_action( 'admin_notices', array( $this, 'mo_media_restriction_error_message' ) );
-		add_action( 'admin_notices', array( $this, 'mo_media_restriction_success_message' ) );
+		remove_action( 'admin_notices', array( $this, 'mo_media_restriction_success_message' ) );
+		add_action( 'admin_notices', array( $this, 'mo_media_restriction_error_message' ) );
 	}
 
 	/**
@@ -581,7 +571,7 @@ class Media_Restriction_Admin {
 	 */
 	public function mo_media_restrict_support() {
 		if ( isset( $_POST['option'] ) ) {
-			if ( current_user_can( 'administrator' ) ) {
+			if ( current_user_can( 'manage_options' ) ) {
 				if ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_feedback' && isset( $_REQUEST['mo_media_restriction_feedback_fields'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_feedback_fields'] ) ), 'mo_media_restriction_feedback_form' ) ) {
 					$user                      = wp_get_current_user();
 					$message                   = 'Plugin Deactivated:';
@@ -601,7 +591,7 @@ class Media_Restriction_Admin {
 						$feedback_reasons = new Miniorange_Media_Restriction_Customer();
 						$submited         = $feedback_reasons->mo_media_restriction_send_email_alert( $email, $phone, $message, 'Feedback: WordPress Prevent Files / Folders Access' );
 
-						$path = plugin_dir_path( dirname( __FILE__ ) ) . 'media-restriction.php';
+						$path = plugin_dir_path( __DIR__ ) . 'media-restriction.php';
 						deactivate_plugins( $path );
 						if ( false === $submited ) {
 							update_option( 'mo_media_restriction_message', 'Your query could not be submitted. Please try again.' );
@@ -615,7 +605,7 @@ class Media_Restriction_Admin {
 						$this->mo_media_restriction_show_error_message();
 					}
 				} elseif ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_skip_feedback' && isset( $_REQUEST['mo_media_restriction_skip_feedback_form_fields'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_skip_feedback_form_fields'] ) ), 'mo_media_restriction_skip_feedback_form' ) ) {
-					$path = plugin_dir_path( dirname( __FILE__ ) ) . 'media-restriction.php';
+					$path = plugin_dir_path( __DIR__ ) . 'media-restriction.php';
 					deactivate_plugins( $path );
 					update_option( 'mo_media_restriction_message', 'Plugin deactivated successfully' );
 					$this->mo_media_restriction_show_success_message();
@@ -631,7 +621,7 @@ class Media_Restriction_Admin {
 	 */
 	public function mo_media_restrict_page() {
 		if ( isset( $_POST['option'] ) ) {
-			if ( current_user_can( 'administrator' ) ) {
+			if ( current_user_can( 'manage_options' ) ) {
 				if ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_enable_media_restriction' && isset( $_REQUEST['mo_media_restriction_enable_field'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_enable_field'] ) ), 'mo_media_restriction_enable_form' ) ) {
 					update_option( 'mo_enable_media_restriction', isset( $_POST['mo_enable_media_restriction'] ) ? intval( $_POST['mo_enable_media_restriction'] ) : 0 );
 					if ( get_option( 'mo_enable_media_restriction' ) ) {
@@ -644,10 +634,8 @@ class Media_Restriction_Admin {
 								wp_mkdir_p( $protectedfiles );
 							}
 						}
-					} else {
-						if ( ! $this->mo_media_restrict_remove_rules() ) {
-							echo "<div class='mo_media_restriction_error_box'><b>Directory doesn\'t have write permissions.</b></div>";
-						}
+					} elseif ( ! $this->mo_media_restrict_remove_rules() ) {
+						echo "<div class='mo_media_restriction_error_box'><b>Directory doesn\'t have write permissions.</b></div>";
 					}
 				} elseif ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_file_types' && isset( $_REQUEST['mo_media_restriction_file_configuration_field'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_file_configuration_field'] ) ), 'mo_media_restriction_file_configuration_form' ) ) {
 					$mo_media_restriction_file_types = isset( $_POST['mo_media_restriction_file_types'] ) ? sanitize_textarea_field( wp_unslash( $_POST['mo_media_restriction_file_types'] ) ) : 0;
@@ -719,14 +707,14 @@ class Media_Restriction_Admin {
 					$tmp_name            = isset( $_FILES['fileToUpload']['tmp_name'] ) && is_string( $_FILES['fileToUpload']['tmp_name'] ) ? $_FILES['fileToUpload']['tmp_name'] : '';
 					$extension_lowercase = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
 					$allowed_mime_map    = $this->mo_media_restriction_get_allowed_mime_types();
-					$whitelist = array_keys( $allowed_mime_map );
+					$whitelist           = array_keys( $allowed_mime_map );
 
 					// Extension must be in the whitelist.
 					if ( $this->mo_media_restriction_check_empty_or_null( $filename ) || validate_file( $filename ) || ! in_array( $extension_lowercase, $whitelist, true ) ) {
-						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Invalid file name or type.', $this->plugin_name ) . '</b></div>';
+						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Invalid file name or type.', 'prevent-file-access' ) . '</b></div>';
 					} elseif ( empty( $tmp_name ) || ! is_uploaded_file( $tmp_name ) ) {
 						//Confirm this is a genuine PHP upload before inspecting content.
-						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error uploading the file.', $this->plugin_name ) . '</b></div>';
+						echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error uploading the file.', 'prevent-file-access' ) . '</b></div>';
 					} else {
 						//Detect actual MIME type from binary magic bytes.
 						$detected_mime = false;
@@ -735,14 +723,14 @@ class Media_Restriction_Admin {
 							$detected_mime = finfo_file( $finfo, $tmp_name );
 							finfo_close( $finfo );
 						} else {
-							error_log( 'media-restriction.php: finfo PHP extension is not available. Upload rejected.' );
-							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Server configuration error: cannot validate file type. Upload rejected.', $this->plugin_name ) . '</b></div>';
+							error_log( 'media-restriction.php: finfo PHP extension is not available. Upload rejected.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security-critical server misconfiguration, not debug code.
+							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Server configuration error: cannot validate file type. Upload rejected.', 'prevent-file-access' ) . '</b></div>';
 							return;
 						}
 
 						if ( false === $detected_mime || '' === $detected_mime ) {
-							error_log( 'media-restriction.php: MIME detection returned empty result for upload: ' . $filename );
-							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Could not determine file type. Upload rejected.', $this->plugin_name ) . '</b></div>';
+							error_log( 'media-restriction.php: MIME detection returned empty result for upload: ' . $filename ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Security-critical upload validation, not debug code.
+							echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Could not determine file type. Upload rejected.', 'prevent-file-access' ) . '</b></div>';
 						} elseif ( ! isset( $allowed_mime_map[ $extension_lowercase ] ) || ! in_array( $detected_mime, (array) $allowed_mime_map[ $extension_lowercase ], true ) ) {
 							//Detected MIME must match what this extension permits.
 							wp_die( 'File content does not match its extension.', 'Access Denied', array( 'response' => 403 ) );
@@ -757,26 +745,27 @@ class Media_Restriction_Admin {
 								} else {
 									// Check if path exists but is not a directory.
 									if ( file_exists( $protectedfiles ) && ! is_dir( $protectedfiles ) ) {
-										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Upload path exists but is not a directory.', $this->plugin_name ) . '</b></div>';
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Upload path exists but is not a directory.', 'prevent-file-access' ) . '</b></div>';
 										return;
 									}
 
 									// Create directory if it does not exist.
 									if ( ! is_dir( $protectedfiles ) && ! wp_mkdir_p( $protectedfiles ) ) {
-										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Failed to create directory. Please check permissions.', $this->plugin_name ) . '</b></div>';
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Failed to create directory. Please check permissions.', 'prevent-file-access' ) . '</b></div>';
 										return;
 									}
 
 									$target_file = $protectedfiles . DIRECTORY_SEPARATOR . basename( $filename );
+									$wp_filesystem = $this->mo_media_restriction_get_filesystem();
 									// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Slashes must be preserved for a filesystem path.
-									if ( move_uploaded_file( $tmp_name, $target_file ) ) {
-										echo '<div class="mo_media_restriction_success_box"><b>' . esc_html__( 'File uploaded successfully.', $this->plugin_name ) . '</b></div>';
+									if ( $wp_filesystem && $wp_filesystem->move( $tmp_name, $target_file, true ) ) {
+										echo '<div class="mo_media_restriction_success_box"><b>' . esc_html__( 'File uploaded successfully.', 'prevent-file-access' ) . '</b></div>';
 									} else {
-										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error moving the uploaded file.', $this->plugin_name ) . '</b></div>';
+										echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( 'Error moving the uploaded file.', 'prevent-file-access' ) . '</b></div>';
 									}
 								}
 							} else {
-								echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( "Directory doesn't exist.", $this->plugin_name ) . '</b></div>';
+								echo '<div class="mo_media_restriction_error_box"><b>' . esc_html__( "Directory doesn't exist.", 'prevent-file-access' ) . '</b></div>';
 							}
 						}
 					}
@@ -808,28 +797,26 @@ class Media_Restriction_Admin {
 					$filename = isset( $_POST['mo_media_restrict_filename'] ) ? sanitize_file_name( wp_unslash( $_POST['mo_media_restrict_filename'] ) ) : '';
 					if ( $this->mo_media_restriction_check_empty_or_null( $filename ) || 'none' === $filename ) {
 						echo '<div class="mo_media_restriction_error_box"><b>Please select a file to submit your query.</b></div>';
-					} else {
-						if ( ! validate_file( $filename ) ) {
-							$upload_dir = wp_upload_dir();
-							if ( $upload_dir && isset( $upload_dir['basedir'] ) ) {
-								$base_upload_dir = $upload_dir['basedir'];
-								$protectedfiles  = $base_upload_dir . DIRECTORY_SEPARATOR . 'protectedfiles';
-								if ( file_exists( $protectedfiles ) ) {
-									if ( file_exists( $protectedfiles . DIRECTORY_SEPARATOR . $filename ) ) {
-										wp_delete_file( $protectedfiles . DIRECTORY_SEPARATOR . $filename );
-										echo '<div class="mo_media_restriction_success_box"><b>File deleted successfully.</b></div>';
-									} else {
-										echo '<div class="mo_media_restriction_error_box"><b>File doesn\'t exist.</b></div>';
-									}
+					} elseif ( ! validate_file( $filename ) ) {
+						$upload_dir = wp_upload_dir();
+						if ( $upload_dir && isset( $upload_dir['basedir'] ) ) {
+							$base_upload_dir = $upload_dir['basedir'];
+							$protectedfiles  = $base_upload_dir . DIRECTORY_SEPARATOR . 'protectedfiles';
+							if ( file_exists( $protectedfiles ) ) {
+								if ( file_exists( $protectedfiles . DIRECTORY_SEPARATOR . $filename ) ) {
+									wp_delete_file( $protectedfiles . DIRECTORY_SEPARATOR . $filename );
+									echo '<div class="mo_media_restriction_success_box"><b>File deleted successfully.</b></div>';
 								} else {
-									echo '<div class="mo_media_restriction_error_box"><b>Protected directory doesn\'t exist.</b></div>';
+									echo '<div class="mo_media_restriction_error_box"><b>File doesn\'t exist.</b></div>';
 								}
 							} else {
-								echo '<div class="mo_media_restriction_error_box"><b>Upload directory doesn\'t exist.</b></div>';
+								echo '<div class="mo_media_restriction_error_box"><b>Protected directory doesn\'t exist.</b></div>';
 							}
 						} else {
-							echo '<div class="mo_media_restriction_error_box"><b>Invalid file.</b></div>';
+							echo '<div class="mo_media_restriction_error_box"><b>Upload directory doesn\'t exist.</b></div>';
 						}
+					} else {
+						echo '<div class="mo_media_restriction_error_box"><b>Invalid file.</b></div>';
 					}
 				} elseif ( sanitize_textarea_field( wp_unslash( $_POST['option'] ) ) === 'mo_media_restriction_register_customer' && isset( $_REQUEST['mo_media_restriction_register_customer_field'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['mo_media_restriction_register_customer_field'] ) ), 'mo_media_restriction_register_customer_form' ) ) {
 					// validation and sanitization.
@@ -899,9 +886,9 @@ class Media_Restriction_Admin {
 						$content      = $customer->get_customer_key( $password );
 						$customer_key = json_decode( $content, true );
 						if ( json_last_error() === JSON_ERROR_NONE && isset( $customer_key['status'] ) && 'SUCCESS' === $customer_key['status'] ) {
-							update_option( 'mo_media_restriction_admin_customer_key', $customer_key['id'] );
-							update_option( 'mo_media_restriction_admin_api_key', $customer_key['apiKey'] );
-							update_option( 'customer_token', $customer_key['token'] );
+							update_option( 'mo_media_restriction_admin_customer_key', $customer_key['id'], 'no' );
+							update_option( 'mo_media_restriction_admin_api_key', $customer_key['apiKey'], 'no' );
+							update_option( 'mo_media_restriction_customer_token', $customer_key['token'], 'no' );
 							update_option( 'mo_media_restriction_admin_phone', isset( $customer_key['phone'] ) ? $customer_key['phone'] : '' );
 							delete_option( 'password' );
 							update_option( 'mo_media_restriction_new_user', 'account-setup' );
@@ -929,7 +916,7 @@ class Media_Restriction_Admin {
 					// validation and sanitization.
 					delete_option( 'mo_media_restriction_admin_customer_key' );
 					delete_option( 'mo_media_restriction_admin_api_key' );
-					delete_option( 'customer_token' );
+					delete_option( 'mo_media_restriction_customer_token' );
 					delete_option( 'mo_media_restriction_admin_phone' );
 					delete_option( 'mo_media_restriction_admin_email' );
 					update_option( 'mo_media_restriction_new_user', 'login' );
@@ -937,7 +924,7 @@ class Media_Restriction_Admin {
 					// validation and sanitization.
 					delete_option( 'mo_media_restriction_admin_customer_key' );
 					delete_option( 'mo_media_restriction_admin_api_key' );
-					delete_option( 'customer_token' );
+					delete_option( 'mo_media_restriction_customer_token' );
 					delete_option( 'mo_media_restriction_admin_phone' );
 					delete_option( 'mo_media_restriction_admin_email' );
 					update_option( 'mo_media_restriction_new_user', 'register' );
@@ -983,5 +970,4 @@ class Media_Restriction_Admin {
 
 		return $secure_url;
 	}
-
 }

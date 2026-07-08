@@ -1,5 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * Provide a admin area view for the plugin
@@ -16,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /**
  * Adding required packages.
  */
-require 'media-restriction-addon .php';
+require 'media-restriction-addon.php';
 /**
  * Stating page UI intiate.
  *
@@ -24,8 +26,14 @@ require 'media-restriction-addon .php';
  */
 function mo_media_restrict_page_ui() {
 	?>
-	<div style="overflow:hidden">
-		<div class="row" style="margin-left:-20px">
+	<div class="mo_media_plugin_page_wrap">
+		<div class="mo_media_plugin_header">
+			<div class="mo_media_plugin_header_brand">
+				<?php // phpcs:ignore PluginCheck.CodeAnalysis.ImageFunctions.NonEnqueuedImage ?>
+				<img src="<?php echo esc_url( plugins_url( 'images/logo.png', dirname( __FILE__ ) ) ); ?>" alt="<?php esc_attr_e( 'miniOrange', 'prevent-file-access' ); ?>" class="mo_media_plugin_header_logo">
+				<h1 class="mo_media_plugin_header_title"><span class="mo_media_brand_orange">miniOrange</span> Prevent Files / Folders Access</h1>
+			</div>
+		</div>
 
 				<?php
 				$currenttab = '';
@@ -33,84 +41,18 @@ function mo_media_restrict_page_ui() {
 					$currenttab = sanitize_text_field( wp_unslash( $_GET['tab'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are fetching data from URL and not on form submission.
 				}
 				?>
-	<div class="tab">
-	<div class="logo-details mo_media_restriction_logo_details">
-	<img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/miniorange_logo.png'; ?>" width="10%">&nbsp;&nbsp;&nbsp;
-	<span class="logo_name mo_media_restriction_logo_name">miniOrange</span>
-	</div>
-	<a href="admin.php?page=mo_media_restrict&tab=configure_file_restriction"><button class="tablinks 
+	<nav class="mo_media_restriction_nav">
+	<a href="admin.php?page=mo_media_restrict&tab=configure_file_restriction" class="mo_media_restriciton_nav_item<?php echo ( '' === $currenttab || 'configure_file_restriction' === $currenttab ) ? ' active' : ''; ?>" id="defaultOpen">File &amp; Folder Restriction</a>
+	<a href="admin.php?page=mo_media_restrict&tab=redirect_option" class="mo_media_restriciton_nav_item<?php echo 'redirect_option' === $currenttab ? ' active' : ''; ?>" id="defaultOpen2">Select Server &amp; Redirect option</a>
+	<a href="admin.php?page=mo_media_restrict&tab=private_directory" class="mo_media_restriciton_nav_item<?php echo 'private_directory' === $currenttab ? ' active' : ''; ?>">Private Directory</a>
+	<a href="admin.php?page=mo_media_restrict&tab=configure_role_base_restriction" class="mo_media_restriciton_nav_item<?php echo 'configure_role_base_restriction' === $currenttab ? ' active' : ''; ?>">Role/User base Restriction</a>
+	<a href="admin.php?page=mo_media_restrict&tab=ip_restriction" class="mo_media_restriciton_nav_item<?php echo 'ip_restriction' === $currenttab ? ' active' : ''; ?>">IP restriction</a>
+	<a href="admin.php?page=mo_media_restrict&tab=add_on" class="mo_media_restriciton_nav_item<?php echo 'add_on' === $currenttab ? ' active' : ''; ?>">Add-on</a>
+	<a href="admin.php?page=mo_media_restrict&tab=account_setup" class="mo_media_restriciton_nav_item<?php echo 'account_setup' === $currenttab ? ' active' : ''; ?>">Account</a>
+	<a href="https://plugins.miniorange.com/protect-wordpress-media-files#featuredocumentation" target="_blank" rel="noopener" class="mo_media_restriciton_nav_item">Setup Guide</a>
+	</nav>
+	<div class="row" style="margin-top:16px;">
 	<?php
-	if ( '' === $currenttab || 'configure_file_restriction' === $currenttab ) {
-		echo 'active';}
-	?>
-	" id="defaultOpen"><i class="fa fa-file-text"></i>&nbsp;&nbsp;&nbsp;<span class="links_name">File & Folder Restriction</span></button></a>
-	<a href="admin.php?page=mo_media_restrict&tab=redirect_option"><button class="tablinks 
-	<?php
-	if ( 'redirect_option' === $currenttab ) {
-		echo 'active';}
-	?>
-		" id="defaultOpen2"><i class="fa fa-external-link"></i>&nbsp;&nbsp;&nbsp;Select Server & Redirect &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;option</button></a>
-	<a href="admin.php?page=mo_media_restrict&tab=private_directory"><button class="tablinks 
-	<?php
-	if ( 'private_directory' === $currenttab ) {
-		echo 'active';}
-	?>
-	"><i class="fa fa-folder-open"></i>&nbsp;&nbsp;&nbsp;Private Directory</button></a>
-	<a href="admin.php?page=mo_media_restrict&tab=configure_role_base_restriction"><button class="tablinks 
-	<?php
-	if ( 'configure_role_base_restriction' === $currenttab ) {
-		echo 'active';}
-	?>
-		"><i class="fa fa-cogs"></i>&nbsp;&nbsp;&nbsp;Role/User base Restriction</button></a> 
-	<a href="admin.php?page=mo_media_restrict&tab=ip_restriction"><button class="tablinks 
-	<?php
-	if ( 'ip_restriction' === $currenttab ) {
-		echo 'active';}
-	?>
-	"><i class="fa fa-database"></i>&nbsp;&nbsp;&nbsp;IP restriction</button></a>
-
-	<a href="admin.php?page=mo_media_restrict&tab=add_on"><button class="tablinks 
-	<?php
-	if ( 'add_on' === $currenttab ) {
-		echo 'active';}
-	?>
-	"><i class="fa fa-plus-square"></i>&nbsp;&nbsp;&nbsp;Add-on</button></a>
-	<a href="admin.php?page=mo_media_restrict&tab=account_setup"><button class="tablinks 
-	<?php
-	if ( 'account_setup' === $currenttab ) {
-		echo 'active';}
-	?>
-	"><i class="fa fa-user-o"></i>&nbsp;&nbsp;&nbsp;Account</button></a>
-	<a href="admin.php?page=mo_media_restrict&tab=requestfordemo"><button class="tablinks 
-	<?php
-	if ( 'requestfordemo' === $currenttab ) {
-		echo 'active';}
-	?>
-		"><i class="fa-sharp fa-solid fa-cloud"></i>&nbsp;&nbsp;&nbsp;Trials Available</button></a>
-</div>
-	<?php if ( ! ( isset( $_REQUEST['tab'] ) && 'licensingtab' === sanitize_text_field( wp_unslash( $_REQUEST['tab'] ) ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are fetching data from URL and not on form submission. ?> 
-<div class="row mo_oauth_notice_after" style="margin-left: 20.8%;margin-top:1.5%;display: flex;">
-		<div class="mo_media_restriction_box box" style="width: calc(100% / 3 - 70px);"><a href="admin.php?page=mo_media_restrict&tab=licensingtab"><div class="mo_media_restriction_sub_box">
-		<div class="right-side">
-			<div class="box-topic">Licensing plans</div>
-		</div>
-		&nbsp;&nbsp;<img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/pricing-icon.png'; ?>" width="12%">
-		</div></a></div>		
-		<div class="mo_media_restriction_box box"><a href="https://plugins.miniorange.com/protect-wordpress-media-files#featuredocumentation" target="_blank"><div class="mo_media_restriction_sub_box">
-		<div class="right-side">
-			<div class="box-topic">Features Documentation</div>
-		</div>
-		&nbsp;&nbsp;<img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="10%">
-		</div></a></div>
-		<div class="mo_media_restriction_box box" ><a href="https://wordpress.org/support/plugin/prevent-file-access/" target="_blank"><div class="mo_media_restriction_sub_box">
-		<div class="right-side">
-			<div class="box-topic">Ask questions on forum</div>
-		</div>
-		&nbsp;&nbsp;<img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="10%">
-		</div></a></div>
-	</div>
-				<?php
-	}
 	if ( '' === $currenttab || 'configure_file_restriction' === $currenttab ) {
 		mo_media_restrict_file_restriction();
 	} elseif ( 'configure_role_base_restriction' === $currenttab ) {
@@ -121,8 +63,6 @@ function mo_media_restrict_page_ui() {
 		mo_media_redirect_option_tab();
 	} elseif ( 'ip_restriction' === $currenttab ) {
 		mo_media_ip_restriction_tab();
-	} elseif ( 'licensingtab' === $currenttab ) {
-		mo_media_restrict_licensing_tab();
 	} elseif ( 'account_setup' === $currenttab ) {
 		mo_media_account_setup_tab();
 	} elseif ( 'requestfordemo' === $currenttab ) {
@@ -131,7 +71,6 @@ function mo_media_restrict_page_ui() {
 		mo_media_restrict_addon_list();
 	}
 	?>
-		</div>
 		<?php if ( ! ( isset( $_REQUEST['tab'] ) && 'licensingtab' === sanitize_text_field( wp_unslash( $_REQUEST['tab'] ) ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are fetching data from URL and not on form submission. ?>
 			<div class="col-md-3" style="padding:0px;">
 				<div class="rightbar-sec" style="margin: 1em 2.5em 1em 0em">
@@ -140,21 +79,21 @@ function mo_media_restrict_page_ui() {
 					<p><span><b>✓</b></span>&nbsp;&nbsp;Role-based restriction</p>
 					<p><span><b>✓</b></span>&nbsp;&nbsp;File &amp; folder restriction</p>
 					<p class="">Starting at <span class="" style="font-weight: bold;font-size: 25px;">$249*</span></p>
-					<p class=""><a href="admin.php?page=mo_media_restrict&tab=licensingtab"><button type="button" style="width:auto;padding: 5px 10px;border-radius:4px;background: #ffffff;border: navajowhite;color: #7C7C7C;" class="">Go Enterprise Now</button></a></p>
+					<p class=""><a href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener"><button type="button" style="width:auto;padding: 5px 10px;border-radius:4px;background: #ffffff;border: navajowhite;color: #7C7C7C;" class="">Go Enterprise Now</button></a></p>
 				</div>
 			<br>
 	<div class="mo_media_restriction_security_card">
 		<div class="inner-block"> 
-			<img src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . '../images/miniorange_logo.png' ); ?>" alt="miniOrange" style="width: 30px; height: 30px;">
+			<img src="<?php echo esc_url( plugins_url( 'images/miniorange_logo.png', dirname( __FILE__ ) ) ); ?>" alt="miniOrange" style="width: 30px; height: 30px;">
 			<p class="mo_media_restriction_reverse_proxy_card" >Reverse Proxy</p>
 			<p style="color: #838383;">miniOrange</p>
 			<hr style="margin-top: 10px; margin-bottom: 15px;">
 		<p class="" style="line-height: 22px;color: #515151;">Reverse Proxy improves site performance and protects your websites against web vulnerabilities, which provides advanced security solutions such as IP restriction, Media Restriction, URL Rewriting, Rate Limiting and many more</p>
-		<i class="fa fa-star str-rating-saml"></i>
-		<i class="fa fa-star str-rating-saml"></i>
-		<i class="fa fa-star str-rating-saml"></i>
-		<i class="fa fa-star str-rating-saml"></i>
-		<i class="fa fa-star-half-o str-rating-saml"></i>
+		<i class="dashicons dashicons-star-filled str-rating-saml"></i>
+		<i class="dashicons dashicons-star-filled str-rating-saml"></i>
+		<i class="dashicons dashicons-star-filled str-rating-saml"></i>
+		<i class="dashicons dashicons-star-filled str-rating-saml"></i>
+		<i class="dashicons dashicons-star-half str-rating-saml"></i>
 		<br><br>
 		<p class=""><a href="https://wordpress.org/plugins/reverse-proxy/" target="_blank"><button type="button"class="mo_media_restriction-button">Go Premium Now</button></a></p>
 		</div>
@@ -206,654 +145,11 @@ function mo_media_restrict_page_ui() {
 			</div>
 		</div>
 	<?php if ( ! ( isset( $_REQUEST['tab'] ) && 'licensingtab' === sanitize_text_field( wp_unslash( $_REQUEST['tab'] ) ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Ignoring nonce verification because we are fetching data from URL and not on form submission. ?>
-	</div>	
-</row>
-</div>
+	</div><!-- rightbar-sec -->
+	</div><!-- col-md-3 -->
 	<?php } ?>
-		</div>
-	</div>
-	<?php
-}
-/**
- * Licensing tab UI.
- *
- * @return mixed
- */
-function mo_media_restrict_licensing_tab() {
-	?>
-	<!-- HTML Code start -->
-	<div class="col-md-12">
-		<div id="account-setup" class="tabcontent mo_media_restriction_tabcontent">
-		<div class="dashboard-sec mo_media_restriction_container" style="margin-left: 23%;">
-		<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/pricing-icon.png'; ?>" width="33px"><span>&nbsp;&nbsp;&nbsp;Choose From The Below Plans To Upgrade </span></h4>
-		<hr class="mo_media_restriction_hr">
-		<section class='content'>
-		<div class="container">
-			<div class="clearfix">
-				<div class="row pricing-wrapper comparison-table clearfix style-3">
-					<div class="col-md-4 pricing-col list-feature">
-						<div class="pricing-card">
-							<div class="pricing-header">
-								<h5>Choose Your Plan</h5>
-								<p>Compare Package Feature</p>
-							</div>
-							<div class="pricing-feature">
-								<li class="heading">
-									<p><b>File Restriction</b></p>
-								</li>
-								<li>
-									<p>1. Number of Extensions</p>
-								</li>
-								<li class="heading">
-									<p><b>Redirect Option</b></p>
-								</li>
-								<li>
-									<p>1. Display Custom Page</p>
-								</li>
-								<li>
-									<p>2. WordPress login</p>
-								</li>
-								<li>
-									<p>3. SSO (SAML or OAuth) login</p>
-								</li>
-								<li class="heading">
-									<p><b>Folder Restriction</b></p>
-								</li>
-								<li>
-									<p>1. WordPress Upload Folder</p>
-								</li>
-								<li>
-									<p>2. WordPress Custom Folder</p>
-								</li>
-								<li>
-									<p>3. User Based Folder Restriction</p>
-								</li>
-								<li>
-									<p>4. Roles Based Folder Restriction</p>
-								</li>
-								<li class="heading">
-									<p><b>Protected Folder</b></p>
-								</li>
-								<li>
-									<p>1. Number of file uploads</p>
-								</li>
-								<li class="heading">
-									<p><b>Supported server</b></p>
-								</li>
-								<li>
-									<p>1. Apache</p>
-								</li>
-								<li>
-									<p>2. NGINX</p>
-								</li>
-								<li class="heading">
-									<p><b>Security level Base</b></p>
-								</li>
-								<li>
-									<p>1. Cookie</p>
-								</li>
-								<li>
-									<p>2. Session</p>
-								</li>
-								<li class="heading">
-									<p><b>Media Management</b></p>
-								</li>
-								<li>
-									<p>1. Controlled access</p>
-								</li>
-								<li>
-									<p>2. Categorize folders & subfolder</p>
-								</li>
-								<li>
-									<p>3. Logs ( Upload, Download, Delete)</p>
-								</li>
-								<li class="heading">
-									<p><b>Membership Media Restriction</b></p>
-								</li>
-								<li>
-									<p>1. Paid Memberships Pro</p>
-								</li>
-								<li>
-									<p>2. ARMember Membership</p>
-								</li>
-								<li>
-									<p>3. WordPress Membership</p>
-								</li>
-								<li>
-									<p>4. WooCommerce Subscription</p>
-								</li>
-							</div>
-						</div>
-					</div>
-					<!-- Premium Plan  -->
-					<div class="col-md-2.6 pricing-col person">
-						<div class="pricing-card">
-							<div class="pricing-header">
-								<h5>Premium</h5>
-								<div class="price-box">
-									<div class="price">149
-										<div class="currency">$</div>
-										<!-- <div class="plan">/ Year</div> -->
-									</div>
-								</div>
-							</div>
-							<div class="pricing-feature pricing-center">
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-							</div>
-							<div class="pricing-footer">
-								<a onclick="upgradeform('wp_media_restriction_plan')" class="btn btn-act rounded btn-line">
-									<span>Upgrade now</span>
-									<i class="fa fa-arrow-right"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- Enterprise Plan -->
-					<div class="col-md-2.6 pricing-col">
-						<div class="pricing-card">
-							<div class="pricing-header">
-								<h5>Enterprise</h5>
-								<div class="price-box">
-									<div class="price">249
-										<div class="currency">$</div>
-										<!-- <div class="plan">/ Year</div> -->
-									</div>
-								</div>
-							</div>
-							<div class="pricing-feature pricing-center">
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-times unavailable"></i>
-									</p>
-								</li>
-							</div>
-							<div class="pricing-footer">
-								<a onclick="upgradeform('wp_media_restriction_enterprise_plan')" class="btn btn-act rounded btn-line">
-									<span>Upgrade now</span>
-									<i class="fa fa-arrow-right"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-					<!-- All Inclusive Plan -->
-					<div class="col-md-2.6 pricing-col person">
-						<div class="pricing-card">
-							<div class="pricing-header">
-								<h5>ALL-INCLUSIVE</h5>
-								<a class="ribbon">
-									<i class="fa fa-star"></i>
-									<span>Recommended</span>
-								</a>
-								<div class="price-box">
-									<div class="price">449
-										<div class="currency">$</div>
-										<!-- <div class="plan">/ Year</div> -->
-									</div>
-								</div>
-							</div>
-							<div class="pricing-feature pricing-center">
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<span>UNLIMITED</span>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li class="heading">
-									<p>
-										<i>&nbsp;&nbsp;&nbsp;</i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-								<li>
-									<p>
-										<i class="fa fa-check available"></i>
-									</p>
-								</li>
-							</div>
-							<div class="pricing-footer">
-								<a onclick="upgradeform('wp_media_restriction_all_inclusive_plan')" class="btn btn-act rounded btn-line">
-									<span>Upgrade now</span>
-									<i class="fa fa-arrow-right"></i>
-								</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-md-12">
-						<div class="moc-licensing-notice">
-							<span style="color: red;">*</span>Cost applicable for one instance only. Licenses are perpetual and the Support Plan includes 12 months of maintenance (support and version updates). You can renew maintenance after 12 months at 50% of the current license cost.
-							<p><span style="color: red;">*</span><strong>MultiSite Network Support</strong>
-								There is an additional cost for the number of subsites in Multisite Network.</p>
-							<h4>10 Days Return Policy</h4>
-							<p>At miniOrange, we want to ensure you are 100% happy with your purchase. If the premium plugin you purchased is not working as advertised and you've attempted to resolve any issues with our support team, which couldn't get resolved. We will refund the whole amount within 10 days of the purchase. Please email us at <a href="mailto:info@xecurify.com" target="_blank">info@xecurify.com</a> for any queries regarding the return policy.</p>
-							<p><b>This functionality operates at the server level, thus if the Apache server rules doesn't work. Please contact info@xecurify.com with your concerns.</b></p>
-							<p><b>the WP Engine, Siteground and other servers like this runs on a nginx server, which requires the use of nginx configuration rules. Please email us at info@xecurify.com or oauthsupport@xecurify.com if you face any issues.</b></p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-</div>
-</div></div>
-	<a id="mobacktoaccountsetup" style="display:none;"
-	href="<?php echo ! empty( $_SERVER['REQUEST_URI'] ) ? esc_attr( add_query_arg( array( 'tab' => 'account_setup' ), sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) ) : ''; ?>">
-	Back</a>
-	<input type="hidden" value="<?php echo 'account-setup' === get_option( 'mo_media_restriction_new_user' ) ? 1 : 0; ?>" id="mo_customer_registered">
-	<script>
-	function upgradeform(planType) {
-		if (planType === "") {
-		location.href = "https://wordpress.org/plugins/prevent-file-access/";
-		return;
-		} else {
-		if (jQuery('#mo_customer_registered').val() == 1) {
-			const url = `https://portal.miniorange.com/initializepayment?requestOrigin=${planType}`;
-			window.open(url, "_blank");
-		} else {
-			location.href = jQuery('#mobacktoaccountsetup').attr('href');
-		}
-		}
-	}
-	</script>
+	</div><!-- row (wraps tab content col-md-9 + sidebar col-md-3) -->
+	</div><!-- mo_media_plugin_page_wrap -->
 	<?php
 }
 /**
@@ -864,13 +160,14 @@ function mo_media_restrict_licensing_tab() {
 function mo_media_account_setup_tab() {
 	if ( false === get_option( 'mo_media_restriction_new_user' ) || 'register' === get_option( 'mo_media_restriction_new_user' ) ) {
 		?>
-		<row class=" row mo_media_restriction_row">
-		<div class="col-md-9"> 
+		<div class="col-md-9">
 		<div id="account-setup" class="tabcontent mo_media_restriction_tabcontent">
 		<div class="dashboard-sec mo_media_restriction_container">
 		<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Register with miniOrange &nbsp;<small class="optional-btn mo_media_restriction_optional-btn" style="font-size: x-small;">[OPTIONAL]</small></span></h4>
-		<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4><span>Register with miniOrange &nbsp;<small class="optional-btn mo_media_restriction_optional-btn" style="font-size: x-small;">[OPTIONAL]</small></span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 			<h6>Why should I register? </h6>
 			<p class="mo_media_restriction_contact_us_p mo_media_restriction_notice_background">You should register so that in case you need help, we can help you with step by step instructions.<b> You will also need a miniOrange account to upgrade to the premium version of the plugins.</b> We do not store any information except the email that you will use to register with us.</p>
 			<br>
@@ -915,6 +212,7 @@ function mo_media_account_setup_tab() {
 					</div>
 				</div>
 			</form>
+		</div><!-- card_body -->
 		</div>
 	</div></div>
 		<form action="" id="mo_media_restriction_goto_login_form" method="POST">
@@ -926,16 +224,18 @@ function mo_media_account_setup_tab() {
 				jQuery('#mo_media_restriction_goto_login_form').submit();
 			});
 		</script>
+	</div><!-- col-md-9 -->
 		<?php
 	} elseif ( 'login' === get_option( 'mo_media_restriction_new_user' ) ) {
 		?>
-		<row class=" row mo_media_restriction_row">
-		<div class="col-md-9"> 
+		<div class="col-md-9">
 		<div id="account-setup" class="tabcontent mo_media_restriction_tabcontent">
 		<div class="dashboard-sec mo_media_restriction_container" >
 		<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Login with miniOrange &nbsp;<small class="optional-btn mo_media_restriction_optional-btn" style="font-size: x-small;">[OPTIONAL]</small></span></h4>
-		<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4><span>Login with miniOrange &nbsp;<small class="optional-btn mo_media_restriction_optional-btn" style="font-size: x-small;">[OPTIONAL]</small></span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 			<p class="mo_media_restriction_contact_us_p mo_media_restriction_notice_background">It seems you already have an account with miniOrange. Please enter your miniOrange email and password.</p>
 	</br><p><a target="_blank" href="https://login.xecurify.com/moas/idp/resetpassword" rel="noopener">*Click here if you forgot your password?</a></p>
 			<form action="" method="POST">
@@ -970,6 +270,7 @@ function mo_media_account_setup_tab() {
 					</div>
 				</div>
 			</form>
+		</div><!-- card_body -->
 		</div>
 	</div></div>
 		<form action="" id="mo_media_restriction_goto_register_form" method="POST">
@@ -981,29 +282,33 @@ function mo_media_account_setup_tab() {
 				jQuery('#mo_media_restriction_goto_register_form').submit();
 			});
 		</script>
+	</div><!-- col-md-9 -->
 		<?php
 	} elseif ( 'account-setup' === get_option( 'mo_media_restriction_new_user' ) ) {
 		?>
-		<row class=" row mo_media_restriction_row">
-		<div class="col-md-9"> 
+		<div class="col-md-9">
 		<div id="role-restriction" class="tabcontent mo_media_restriction_tabcontent">
 		<div class="dashboard-sec mo_media_restriction_container" >	
 		<div class="mo_media_restriction_card">
-			<h4 style="margin-bottom:20px"><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/miniorange_logo.png'; ?>" width="30px">&nbsp;&nbsp;&nbsp;<span>Thank you for registering with miniOrange.</span></h4>
-			<hr>
+			<div class="mo_media_restriction_card_header">
+			<h4><span>Thank you for registering with miniOrange.</span></h4>
+			</div>
+			<div class="mo_media_restriction_card_body">
 			<div class="row">
+				<div class="table-responsive">
 				<table class="table table-striped table-bordered">
 					<tbody>
 						<tr>
 							<td><b>miniOrange Account Email</b></td>
-							<td><?php echo esc_html( get_option( 'mo_media_restriction_admin_email' ) ); ?></td>
+							<td style="word-break: break-word;"><?php echo esc_html( get_option( 'mo_media_restriction_admin_email' ) ); ?></td>
 						</tr>
 						<tr>
 							<td><b>Customer ID</b></td>
-							<td><?php echo esc_html( get_option( 'mo_media_restriction_admin_customer_key' ) ); ?></td>
+							<td style="word-break: break-word;"><?php echo esc_html( get_option( 'mo_media_restriction_admin_customer_key' ) ); ?></td>
 						</tr>
 					</tbody>
 				</table>
+				</div>
 			</div>
 
 			<div class="row" style="margin-top:20px">
@@ -1015,8 +320,10 @@ function mo_media_account_setup_tab() {
 					</form>
 				</div>
 			</div>
+	</div><!-- card_body -->
 	</div></div>
 		</div>
+	</div><!-- col-md-9 -->
 		<?php
 	}
 }
@@ -1029,13 +336,14 @@ function mo_media_redirect_option_tab() {
 	$mo_initiate_class   = new Media_Restriction_Admin( 'prevent-file-access', MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION );
 	$mo_demo_nginx_rules = $mo_initiate_class->mo_media_restrict_write_nginx_rules();
 	?>
-	<row class=" row mo_media_restriction_row">
-	<div class="col-md-9"> 
+	<div class="col-md-9">
 	<div id="file-folder" class="tabcontent mo_media_restriction_tabcontent">
 	<div class="dashboard-sec mo_media_restriction_container" >
 		<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Redirect Option</span></h4>
-		<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4><span>Redirect Option</span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">&nbsp;&nbsp;&nbsp;This feature allows you to redirect the restricted user to the desired page when they access the restricted media.</p>
 		<?php
 			$restrict_option = 'display-custom-page';
@@ -1051,8 +359,8 @@ function mo_media_redirect_option_tab() {
 
 					<div class="col-md-6">
 						<input type="radio" class="mo_media_restriction_redirect_radio" name="mo_mr_restrict_option" value="display-custom-page" <?php checked( 'display-custom-page' === $restrict_option ); ?>> <span class="mo_media_restriction_redirect_radio_text">Display Custom Page</span> &nbsp;&nbsp;</br>
-						<input type="radio" disabled class="mo_media_restriction_redirect_radio" name="mo_mr_restrict_option" value="redirect-to-wordpress-login"> <span class="mo_media_restriction_redirect_radio_text">Redirect to WordPress login <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">PREMIUM</a></b></small></span>&nbsp;&nbsp;</br>
-						<input type="radio" disabled class="mo_media_restriction_redirect_radio" name="mo_mr_restrict_option" value="redirect-to-idp-login"> <span class="mo_media_restriction_redirect_radio_text">Redirect to SSO Login <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small> </span>
+						<input type="radio" disabled class="mo_media_restriction_redirect_radio" name="mo_mr_restrict_option" value="redirect-to-wordpress-login"> <span class="mo_media_restriction_redirect_radio_text">Redirect to WordPress login <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">PREMIUM</a></b></small></span>&nbsp;&nbsp;</br>
+						<input type="radio" disabled class="mo_media_restriction_redirect_radio" name="mo_mr_restrict_option" value="redirect-to-idp-login"> <span class="mo_media_restriction_redirect_radio_text">Redirect to SSO Login <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small> </span>
 					</div>
 				</div>
 
@@ -1102,12 +410,12 @@ function mo_media_redirect_option_tab() {
 
 						</br></br>
 
-			<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Advanced Option</span></h4>
+			<h4><span>Advanced Option</span></h4>
 			<hr class="mo_media_restriction_hr">
 				<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">&nbsp;&nbsp;&nbsp;Please select the Server on which your website is hosted.</p>		
 			<div class="row" style="margin-top:20px">
 				<div class="col-md-5">
-					<h6 class="mo_media_restriction_label_heading"><b>Choose server: </b><a href="https://plugins.miniorange.com/protect-wordpress-media-files#serverselection" target="_blank" ><i class="fa fa-info-circle" style="color:black"></i></a></h6>
+					<h6 class="mo_media_restriction_label_heading"><b>Choose server: </b><a href="https://plugins.miniorange.com/protect-wordpress-media-files#serverselection" target="_blank" ><i class="dashicons dashicons-info-outline" style="color:black"></i></a></h6>
 				</div>
 				<div class="col-md-5">
 					<?php
@@ -1134,12 +442,12 @@ function mo_media_redirect_option_tab() {
 			</div>
 			<div class="row" style="margin-top:20px">
 				<div class="col-md-5">
-					<h6 class="mo_media_restriction_label_heading"><b>Security Level Base: </b><a href="https://plugins.miniorange.com/protect-wordpress-media-files#securitylevelbase" target="_blank" ><i class="fa fa-info-circle" style="color:black"></i></a></h6>
+					<h6 class="mo_media_restriction_label_heading"><b>Security Level Base: </b><a href="https://plugins.miniorange.com/protect-wordpress-media-files#securitylevelbase" target="_blank" ><i class="dashicons dashicons-info-outline" style="color:black"></i></a></h6>
 					<p></p>
 				</div>
 				<div class="col-md-5">
 					<input type="radio" name="security_level" checked><span class="mo_media_restriction_redirect_radio_text">Cookie </span>&nbsp;&nbsp;
-					<input type="radio" name="security_level" disabled> <span class="mo_media_restriction_redirect_radio_text">Session  <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small></span>&nbsp;&nbsp;
+					<input type="radio" name="security_level" disabled> <span class="mo_media_restriction_redirect_radio_text">Session  <small style="color:red;"><b>&nbsp;&nbsp;<a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small></span>&nbsp;&nbsp;
 				</div>
 				<div class="col-md-2">
 				</div>
@@ -1164,6 +472,7 @@ function mo_media_redirect_option_tab() {
 					</div>
 				</div>
 			</div>
+		</div><!-- card_body -->
 		</div>
 		<div id="mo_nginx_demo_rule" class="mo_media_restriction_overlay" style="display:none">
 				<div class="mo_media_restriction_popup" style="width:60%;">
@@ -1185,9 +494,10 @@ function mo_media_redirect_option_tab() {
 						<h4><b>NOTE:</b> You might need to communicate with your hosting provider support to uploads these rules.</h4>
 					</div>
 				</div>
-		</div>
-		</div>
-		</div>
+		</div><!-- mo_nginx_demo_rule -->
+		</div><!-- dashboard-sec -->
+		</div><!-- file-folder -->
+	</div><!-- col-md-9 -->
 	<?php
 }
 /**
@@ -1198,13 +508,14 @@ function mo_media_redirect_option_tab() {
 function mo_media_restrict_demo_folder() {
 	$democss = 'width: 350px; height:30px;padding:5px;font-size:14px;';
 	?>
-	<row class=" row mo_media_restriction_row">
-		<div class="col-md-9"> 
+		<div class="col-md-9">
 		<div id="account-setup" class="tabcontent mo_media_restriction_tabcontent">
 		<div class="dashboard-sec mo_media_restriction_container" >
 		<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Request For Demo </span></h4>
-		<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4><span>Request For Demo </span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<div class="row">
 			<div class="col-md-12">
 				<p style="background: #93939317;padding: 10px 10px 10px 10px;border-radius: 10px">Want to try out the paid features before purchasing the license? Just let us know which plan you\'re interested in and we will setup a demo for you.</b></i></p>
@@ -1243,8 +554,10 @@ function mo_media_restrict_demo_folder() {
 				</tr>
 			</table>
 		</form>
-	</div>
-</div></div>
+	</div><!-- card_body -->
+	</div><!-- card -->
+</div><!-- account-setup --></div><!-- dashboard-sec -->
+</div><!-- col-md-9 -->
 	<?php
 }
 /**
@@ -1256,13 +569,14 @@ function mo_media_restrict_file_restriction() {
 	$mo_initiate_class   = new Media_Restriction_Admin( 'prevent-file-access', MO_MEDIA_RESTRICTION_PLUGIN_NAME_VERSION );
 	$mo_demo_nginx_rules = $mo_initiate_class->mo_media_restrict_write_nginx_rules();
 	?>
-<row class=" row mo_media_restriction_row">
 <div class="col-md-9"> 
 <div id="file-folder" class="tabcontent mo_media_restriction_tabcontent">
 <div class="dashboard-sec mo_media_restriction_container" >
 	<div class="mo_media_restriction_card">
-	<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;File & Folder Restriction</span></h4>
-	<hr class="mo_media_restriction_hr">
+	<div class="mo_media_restriction_card_header">
+	<h4><span>File & Folder Restriction</span></h4>
+	</div>
+	<div class="mo_media_restriction_card_body">
 	<div class="row">
 	<div class="col-md-12">
 	<p style="color: #666666;font-size: 12px;" class="mo_media_restriction_notice_background">This functionality operates at the server level, thus if the Apache server rules don't work or your server is a nginx server, which requires the use of nginx configuration rules, or if you face any issues, please email us at info@xecurify.com or oauthsupport@xecurify.com. We would recommend that you please ensure your PHP server and rules will work on your server before purchasing it, or else contact us and we will help you to set up the plugin according to your requirements on your site.</b></i></p>
@@ -1292,7 +606,7 @@ function mo_media_restrict_file_restriction() {
 		<form action="" id="mo_media_restriction_file_configuration_form" method="POST">
 		<?php wp_nonce_field( 'mo_media_restriction_file_configuration_form', 'mo_media_restriction_file_configuration_field' ); ?>
 		<input type="hidden" name="option" value="mo_media_restriction_file_types">
-		<input type="hidden" id="mo_media_restriction_show_rules" name="mo_media_restriction_show_rules" value="0">
+		<input type="hidden" id="mo_media_restriction_show_rules_file_types" name="mo_media_restriction_show_rules" value="0">
 		<div class="row" style="margin-top:20px">
 		<div class="col-md-3">
 			<h6 class="mo_media_restriction_label_heading"><b>File types to restrict:</b></h6>
@@ -1319,12 +633,12 @@ function mo_media_restrict_file_restriction() {
 
 	<div class="row" style="margin-top:50px">
 				<div class="col-md-12">
-					<input type="submit" onclick="mo_media_restriction_rules_confirmation()" class="btn btn-primary btn-large mo_media_restriction_button_css" style="width:150px;height:auto" value="Save Settings">
+					<input type="submit" onclick="mo_media_restriction_rules_confirmation('file-types')" class="btn btn-primary btn-large mo_media_restriction_button_css" style="width:150px;height:auto" value="Save Settings">
 					<div class="mo_media_restriction_note_box"><p><b>Note : </b>Make sure your Permalinks Structure is not set to Plain.<br>To change Permalinks:<b> Go to Admin Dashboard -> Settings -> Permalinks -> Permalink Structure</b></p></div>
 				</div>
 			</div>
 
-			<div id="confirmation-popup" class="mo_media_restriction_overlay" style="display:none">
+			<div id="confirmation-popup-file-types" class="mo_media_restriction_overlay" style="display:none">
 				<div class="mo_media_restriction_popup" style="width:30%;">
 					<a class="close" href="">&times;</a>
 					<br>
@@ -1333,12 +647,11 @@ function mo_media_restrict_file_restriction() {
 						<h4 class="text-center"><b>The plugin will update your .htaccess file to make it work. In case if you find any difficulty drop a query on <a href="mailto:info@xecurify.com">info@xecurify.com</a></b></h4>
 						<div class="mo_media_restriction_note_box"><p><b>Note : </b>Make sure your Permalinks Structure is not set to Plain.<br>To change Permalinks:<b> Go to Admin Dashboard -> Settings -> Permalinks -> Permalink Structure</b></p></div>
 						<br>
-						<button class="btn btn-primary btn-large mo_media_restriction_button_css" onclick="mo_media_restriction_rules_alert_box(true,'mo_media_restriction_file_configuration_form')" style="width:250px;height:50px">Okay, I understand</button>
+						<button class="btn btn-primary btn-large mo_media_restriction_button_css" onclick="mo_media_restriction_rules_alert_box(true,'mo_media_restriction_file_configuration_form','mo_media_restriction_show_rules_file_types')" style="width:250px;height:50px">Okay, I understand</button>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div id="mo_nginx_demo_rule" class="mo_media_restriction_overlay" style="display:none">
+		<div id="mo_nginx_demo_rule-file-types" class="mo_media_restriction_overlay" style="display:none">
 				<div class="mo_media_restriction_popup" style="width:60%;">
 					<a class="close" href="">&times;</a>
 					<br>
@@ -1357,8 +670,10 @@ function mo_media_restrict_file_restriction() {
 						<h4><b>NOTE:</b> You might need to communicate with your hosting provider support to uploads these rules.</h4>
 					</div>
 				</div>
+		</div><!-- mo_nginx_demo_rule-file-types -->
 		<?php } ?>
-	</div>
+		</div><!-- card_body -->
+		</div><!-- card -->
 	<?php
 	/**
 	 * Fuction for subdirectory.
@@ -1369,7 +684,7 @@ function mo_media_restrict_file_restriction() {
 	function mo_media_restrict_directory_has_subdirectory( $path ) {
 		$subdir_list = scandir( $path );
 		foreach ( $subdir_list as $list ) {
-			if ( '.' !== $list || '..' !== $list ) {
+			if ( '.' !== $list && '..' !== $list ) {
 				$check_dir = $path . '/' . $list;
 				if ( is_dir( $check_dir ) ) {
 					return true;
@@ -1420,7 +735,10 @@ function mo_media_restrict_file_restriction() {
 	}
 	?>
 	<div class="mo_media_restriction_card">
-		<h4 style="margin-bottom:30px">Folder Restriction <a href="https://plugins.miniorange.com/protect-wordpress-media-files#uploadfolderrestrictions" target="_blank" ><i class="fa fa-info-circle" style="color:black"></i></a></h4>
+		<div class="mo_media_restriction_card_header">
+		<h4>Folder Restriction <a href="https://plugins.miniorange.com/protect-wordpress-media-files#uploadfolderrestrictions" target="_blank" ><i class="dashicons dashicons-info-outline" style="color:black"></i></a></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<p>
 			<?php
 			$upload_dir = wp_upload_dir();
@@ -1430,7 +748,7 @@ function mo_media_restrict_file_restriction() {
 	<form method="post" id="mo_media_restriction_folder_configuration_form" action="">
 	<div class="row">
 		<div class="col-md-6">
-		<h6 class="mo_media_restriction_label_heading"><b>WP Upload Folder to restrict:</b> <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">PREMIUM</a></b></small> </h6>
+		<h6 class="mo_media_restriction_label_heading"><b>WP Upload Folder to restrict:</b> <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">PREMIUM</a></b></small> </h6>
 		</div>
 		<div class="col-md-4">
 		<?php
@@ -1459,7 +777,7 @@ function mo_media_restrict_file_restriction() {
 	</div>
 	<div class="row">
 		<div class="col-md-6">
-		<h6 class="mo_media_restriction_label_heading"><b>WP Custom Folder to restrict:</b> <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small> </h6>
+		<h6 class="mo_media_restriction_label_heading"><b>WP Custom Folder to restrict:</b> <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small> </h6>
 		</div>
 		<div class="col-md-4">
 		<input type="text" class="form-control" placeholder="Enter folder name here" disabled="">
@@ -1471,8 +789,10 @@ function mo_media_restrict_file_restriction() {
 		<input type="submit" disabled="" class="btn btn-large mo_media_restriction-button mo_media_ip_btn mo_noHover" style="width: 150px; padding: 6px 12px;" value="Save Settings">
 	</div>
 	</div>
+	</div><!-- card_body -->
 </div>
 </div></div>
+</div><!-- col-md-9 -->
 
 	<?php
 }
@@ -1484,12 +804,14 @@ function mo_media_restrict_file_restriction() {
 function mo_media_role_base_restriction() {
 	?>
 
-<row class=" row mo_media_restriction_row">
-<div class="col-md-9"> 
+<div class="col-md-9">
 <div id="role-restriction" class="tabcontent mo_media_restriction_tabcontent">
 <div class="dashboard-sec mo_media_restriction_container" >
 	<div class="mo_media_restriction_card">
-		<h4 style="margin-bottom:30px">User base Folder Restriction <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small></h4>
+		<div class="mo_media_restriction_card_header">
+		<h4>User base Folder Restriction <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<div class="row">
 		<div class="col-md-6">
 			<h6 class="mo_media_restriction_label_heading"><b>Enable user base restriction:</b></h6>
@@ -1501,10 +823,14 @@ function mo_media_role_base_restriction() {
 			</label>
 		</div>
 		</div>
+		</div><!-- card_body -->
 	</div>
 
 	<div class="mo_media_restriction_card">
-		<h4 style="margin-bottom:30px">Role base Folder Restriction <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small></h4>
+		<div class="mo_media_restriction_card_header">
+		<h4>Role base Folder Restriction <small style="color:red;font-size:12px"><b><a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">You can use this feature to restrict access to folders based on WordPress roles. You need to assign a folder name to the role that can access it, then only the user with that role will be able to access that particular folder.</p>
 		<div class="row">
 		<div class="col-md-6">
@@ -1561,9 +887,11 @@ function mo_media_role_base_restriction() {
 				?>
 		</div>
 		</div>
+		</div><!-- card_body -->
 	</div>
 	</div>
-	<script>	
+	</div><!-- col-md-9 -->
+	<script>
 		function show_default_roles(){
 			let roleToggle= document.getElementById('mo_enable_role_base_restriction');
 			let displayRoles = document.getElementById('mo_media_role_based_restriction_check');
@@ -1587,7 +915,10 @@ function mo_media_restrict_page_restriction() {
 	<div class="mo_oauth_premium_option_text"><span style="color:red;">*</span>This is a add-on feature.
 		<a href="https://wordpress.org/plugins/page-and-post-restriction/" target="_blank" rel="noopener">Click Here</a> to see our full list of add-on feature.</div>
 	<div class="mo_media_restriction_card" style="background-color: rgba(168, 168, 168, 0.7);opacity: 0.5;">
-		<h4 style="margin-bottom:30px">Page/Post Restriction</h4>
+		<div class="mo_media_restriction_card_header">
+		<h4>Page/Post Restriction</h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<p>
 			<?php
 			$upload_dir = wp_upload_dir();
@@ -1682,6 +1013,7 @@ function mo_media_restrict_page_restriction() {
 				</table><br>
 				<input type="submit" disabled class="button button-primary button-larges" value="Save Configuration">
 		</div>
+		</div><!-- card_body -->
 	</div>
 	<?php
 }
@@ -1692,13 +1024,14 @@ function mo_media_restrict_page_restriction() {
  */
 function mo_media_restrict_private_directory() {
 	?>
-	<row class=" row mo_media_restriction_row">
-	<div class="col-md-9"> 
+	<div class="col-md-9">
 	<div id="role-restriction" class="tabcontent mo_media_restriction_tabcontent">
-	<div class="dashboard-sec mo_media_restriction_container" style="width: 72%;margin: 1em 0.5em 1em 28%;box-shadow: 0 5px 10px rgb(0 0 0 / 21%);padding: 23px;border-radius: 5px;">
+	<div class="dashboard-sec mo_media_restriction_container">
 		<div class="mo_media_restriction_card">
-		<h4 ><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Upload files in protected folder <a href="https://plugins.miniorange.com/protect-wordpress-media-files#protectedfolder" target="_blank" ><i class="fa fa-info-circle" style="color:black"></i></a></span></h4>
-		<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4 ><span>Upload files in protected folder <a href="https://plugins.miniorange.com/protect-wordpress-media-files#protectedfolder" target="_blank" ><i class="dashicons dashicons-info-outline" style="color:black"></i></a></span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Private Directory feature enables you to store files within a directory that is restricted from public access.<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;We do support only five extenstions in our free version which are: <span class="file-type mo_media_restriction_file-type">png</span> , <span class="file-type mo_media_restriction_file-type">jpg</span> , <span class="file-type mo_media_restriction_file-type">gif</span> , <span class="file-type mo_media_restriction_file-type">pdf</span> , <span class="file-type mo_media_restriction_file-type">doc</span></p>
 
 		<div class="row">
@@ -1767,7 +1100,9 @@ function mo_media_restrict_private_directory() {
 			}
 			?>
 		</div>
+		</div><!-- card_body -->
 		</div></div>
+	</div><!-- col-md-9 -->
 	<?php
 }
 /**
@@ -1777,20 +1112,21 @@ function mo_media_restrict_private_directory() {
  */
 function mo_media_ip_restriction_tab() {
 	?>
-<row class=" row mo_media_restriction_row">
-<div class="col-md-9"> 
+<div class="col-md-9">
 <div id="ip-restrcition" class="tabcontent mo_media_restriction_tabcontent">
 <div class="dashboard-sec mo_media_restriction_container" >
 	<div class="mo_media_restriction_card">
-		<h4><img src="<?php echo esc_attr( plugin_dir_url( __FILE__ ) ) . '../images/addon-icon.png'; ?>" width="5%"><span>&nbsp;&nbsp;&nbsp;Configuration</span></h4>
-	<hr class="mo_media_restriction_hr">
+		<div class="mo_media_restriction_card_header">
+		<h4><span>Configuration</span></h4>
+		</div>
+		<div class="mo_media_restriction_card_body">
 	<p style="color: #666666;background: #93939317;font-size: 12px;padding: 20px;border-radius: 10px;">This feature will allow you to restrict the website based on the user's IP address.</b><br>
 	You can either allow specified IPs to access your website or you can restrict your website to some specific IPs.</b></i></p>
 
 <div class="main-container" style="margin-left: 5em;">
 		<div class="row">
 		<div class="col-md-8">
-			<h6 class="mo_media_restriction_label_heading"><b>Enable IP Based Restriction: <small style="color:red;font-size:12px"><a class="premium-btn mo_media_restriction_premium-btn" href="admin.php?page=mo_media_restrict&amp;tab=licensingtab">ENTERPRISE</a></b></small></h4>
+			<h6 class="mo_media_restriction_label_heading"><b>Enable IP Based Restriction: <small style="color:red;font-size:12px"><a class="premium-btn mo_media_restriction_premium-btn" href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener">ENTERPRISE</a></b></small></h4>
 		</div>
 		<div class="col-md-4">
 			<label class="mo_media_restriction_switch">
@@ -1843,8 +1179,10 @@ function mo_media_ip_restriction_tab() {
 					</div>
 				</div>
 			</div>
+			</div><!-- card_body -->
 		</div>
 		</div>
+		</div><!-- col-md-9 -->
 			<?php
 		}
 }

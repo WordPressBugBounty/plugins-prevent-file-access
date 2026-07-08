@@ -29,7 +29,7 @@ class Media_Restriction_Activator {
 	 * @since    1.1.1
 	 */
 	public static function activate() {
-
+		add_option( 'host_name', 'https://login.xecurify.com', '', 'no' );
+		add_option( 'mo_enable_media_restriction', 1, '', 'no' );
 	}
-
 }
