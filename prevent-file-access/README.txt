@@ -130,7 +130,7 @@ The premium plan offers a range of advanced features, including WordPress Custom
 Please email us at info@xecurify.com or <a href="http://miniorange.com/contact" target="_blank">Contact us</a>. You can also submit your query from the plugin's configuration page.
 
 = Do you provide customer support? =
-Yes, we at miniOrange provide high-quality customer support. Please email us at info@xecurify.com or <a href="http://miniorange.com/contact" target="_blank">Contact us</a>. You can also submit your query from the plugin's configuration page.
+Yes, we at miniOrange provide high-quality customer support. Please email us at info@xecurify.com or <a href="http://miniorange.com/contact" target="_blank">Contact us</a>. You can also submit your query from the plugin's configuration page<a href="https://patchstack.com/database/vdp/76938dc7-e6ba-46ae-b368-855d56d83b8e" target="_blank">.</a>
 
 == Screenshots ==
 
