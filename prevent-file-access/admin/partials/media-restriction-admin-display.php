@@ -78,8 +78,8 @@ function mo_media_restrict_page_ui() {
 					<p style="font-weight: bold;font-size: 18px;letter-spacing: 1px;margin-top: 25px;margin-bottom: 18px;">Unlock More<br>Security Features</p>
 					<p><span><b>✓</b></span>&nbsp;&nbsp;Role-based restriction</p>
 					<p><span><b>✓</b></span>&nbsp;&nbsp;File &amp; folder restriction</p>
-					<p class="">Starting at <span class="" style="font-weight: bold;font-size: 25px;">$249*</span></p>
-					<p class=""><a href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener"><button type="button" style="width:auto;padding: 5px 10px;border-radius:4px;background: #ffffff;border: navajowhite;color: #7C7C7C;" class="">Go Enterprise Now</button></a></p>
+					<p class="">Starting at <span class="" style="font-weight: bold;font-size: 25px;">$149*</span></p>
+					<p class=""><a href="https://plugins.miniorange.com/wordpress-media-restriction#pricing" target="_blank" rel="noopener"><button type="button" style="width:auto;padding: 5px 10px;border-radius:4px;background: #ffffff;border: navajowhite;color: #7C7C7C;" class="">Go Premium Now</button></a></p>
 				</div>
 			<br>
 	<div class="mo_media_restriction_security_card">
