@@ -600,7 +600,8 @@ function mo_media_restrict_file_restriction() {
 	</div>
 	<?php
 	if ( get_option( 'mo_enable_media_restriction' ) ) {
-		$mo_media_restriction_file_types = get_option( 'mo_media_restriction_file_types' ) ? str_replace( '|', ',', get_option( 'mo_media_restriction_file_types' ) ) : 'png,jpg,gif,pdf,doc';
+		// Must match Media_Restriction_Admin::DEFAULT_RESTRICTED_EXTENSIONS, or this UI's default undersells what the .htaccess rule and PHP layer actually restrict.
+		$mo_media_restriction_file_types = get_option( 'mo_media_restriction_file_types' ) ? str_replace( '|', ',', get_option( 'mo_media_restriction_file_types' ) ) : 'jpg,jpeg,png,gif,pdf,doc,docx';
 		$restrict_option                 = 'display-custom-page';
 		?>
 		<form action="" id="mo_media_restriction_file_configuration_form" method="POST">
@@ -618,15 +619,15 @@ function mo_media_restrict_file_restriction() {
 							var input1 = document.querySelector('input[name=mo_media_restriction_file_types]'),
 								// init Tagify script on the above inputs
 								tagify1 = new Tagify(input1, {
-									maxTags: 5,
+									maxTags: 7,
 									enforceWhitelist: true,
-									whitelist: ["pdf", "png", "jpg", "doc", "gif"],
+									whitelist: ["pdf", "png", "jpg", "jpeg", "doc", "docx", "gif"],
 									blacklist: [] // In string format "hello","temp"
 								});
 						</script>
 		</div>
 		<div class="col-md-4">
-			<p style="line-height: 22px;font-size:12px">We do support only five extenstions in our free version which are: <span class="file-type mo_media_restriction_file-type">png</span> , <span class="file-type mo_media_restriction_file-type">jpg</span> , <span class="file-type mo_media_restriction_file-type">gif</span> , <span class="file-type mo_media_restriction_file-type">pdf</span> , <span class="file-type mo_media_restriction_file-type">doc</span></p>
+			<p style="line-height: 22px;font-size:12px">We do support only seven extensions in our free version which are: <span class="file-type mo_media_restriction_file-type">png</span> , <span class="file-type mo_media_restriction_file-type">jpg</span> , <span class="file-type mo_media_restriction_file-type">jpeg</span> , <span class="file-type mo_media_restriction_file-type">gif</span> , <span class="file-type mo_media_restriction_file-type">pdf</span> , <span class="file-type mo_media_restriction_file-type">doc</span> , <span class="file-type mo_media_restriction_file-type">docx</span></p>
 		</div>
 		</div>
 	</form>
@@ -1032,7 +1033,7 @@ function mo_media_restrict_private_directory() {
 		<h4 ><span>Upload files in protected folder <a href="https://plugins.miniorange.com/protect-wordpress-media-files#protectedfolder" target="_blank" ><i class="dashicons dashicons-info-outline" style="color:black"></i></a></span></h4>
 		</div>
 		<div class="mo_media_restriction_card_body">
-		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Private Directory feature enables you to store files within a directory that is restricted from public access.<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;We do support only five extenstions in our free version which are: <span class="file-type mo_media_restriction_file-type">png</span> , <span class="file-type mo_media_restriction_file-type">jpg</span> , <span class="file-type mo_media_restriction_file-type">gif</span> , <span class="file-type mo_media_restriction_file-type">pdf</span> , <span class="file-type mo_media_restriction_file-type">doc</span></p>
+		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Private Directory feature enables you to store files within a directory that is restricted from public access.<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;We do support only seven extensions in our free version which are: <span class="file-type mo_media_restriction_file-type">png</span> , <span class="file-type mo_media_restriction_file-type">jpg</span> , <span class="file-type mo_media_restriction_file-type">jpeg</span> , <span class="file-type mo_media_restriction_file-type">gif</span> , <span class="file-type mo_media_restriction_file-type">pdf</span> , <span class="file-type mo_media_restriction_file-type">doc</span> , <span class="file-type mo_media_restriction_file-type">docx</span></p>
 
 		<div class="row">
 			<div style="width:95%;text-align:center;padding:20px;border: 4px dashed #b4b9be;margin-left:auto;margin-right:auto;margin-bottom:10px">

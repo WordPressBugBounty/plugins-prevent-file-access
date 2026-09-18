@@ -32,6 +32,16 @@ require_once 'partials/class-mo-media-restriction-admin-feedback.php';
 class Media_Restriction_Admin {
 
 	/**
+	 * Single source of truth for the extensions this plugin protects. Used both to build the
+	 * .htaccess rewrite rule and to gate mo_media_show_file_or_folder()'s output, so the two
+	 * can never drift out of sync again.
+	 *
+	 * @since 2.6.6
+	 * @var string[]
+	 */
+	const DEFAULT_RESTRICTED_EXTENSIONS = array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx' );
+
+	/**
 	 * The ID of this plugin.
 	 *
 	 * @since    1.1.1
@@ -216,7 +226,7 @@ class Media_Restriction_Admin {
 				}
 				exit;
 			} else {
-				$allowed_extensions = array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'txt' );
+				$allowed_extensions = self::DEFAULT_RESTRICTED_EXTENSIONS;
 				$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 
 				if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
@@ -420,10 +430,11 @@ class Media_Restriction_Admin {
 	private function mo_media_restriction_get_allowed_mime_types() {
 		return array(
 			'doc'  => array( 'application/msword', 'application/octet-stream' ),
-			'docx' => array( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip' ),
+			'docx' => array( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip', 'application/octet-stream' ),
 			'pdf'  => 'application/pdf',
 			'png'  => 'image/png',
 			'jpg'  => array( 'image/jpeg' ),
+			'jpeg' => array( 'image/jpeg' ),
 			'gif'  => 'image/gif',
 		);
 	}
@@ -494,7 +505,9 @@ class Media_Restriction_Admin {
 		// Strip everything except lowercase letters, digits, and the pipe separator to prevent htaccess injection.
 		$mo_media_restriction_file_types = preg_replace( '/[^a-zA-Z0-9|]/', '', (string) $mo_media_restriction_file_types );
 		if ( empty( $mo_media_restriction_file_types ) ) {
-			$mo_media_restriction_file_types = 'png|jpg|gif|pdf|doc';
+			// Must match the extensions mo_media_show_file_or_folder() actually serves, or files with an
+			// extension missing here bypass the rewrite (and thus the auth check) entirely.
+			$mo_media_restriction_file_types = implode( '|', self::DEFAULT_RESTRICTED_EXTENSIONS );
 		}
 
 		// Scope matching to the uploads directory so plugin/theme bundled assets (e.g. this plugin's own
