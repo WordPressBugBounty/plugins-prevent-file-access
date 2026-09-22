@@ -833,17 +833,6 @@ function mo_media_role_base_restriction() {
 		</div>
 		<div class="mo_media_restriction_card_body">
 		<p style="color: #400d0d;font-size: 12px;" class="mo_media_restriction_notice_background">You can use this feature to restrict access to folders based on WordPress roles. You need to assign a folder name to the role that can access it, then only the user with that role will be able to access that particular folder.</p>
-		<div class="row">
-		<div class="col-md-6">
-			<h6 class="mo_media_restriction_label_heading"><b>Enable role base restriction:</b></h6>
-		</div>
-		<div class="col-md-4">
-			<label class="mo_media_restriction_switch">
-			<input value="1" name="mo_enable_role_base_restriction" type="checkbox" id="mo_enable_role_base_restriction" onclick="show_default_roles()" checked>
-			<span class="mo_media_restriction_slider round"></span>
-			</label>
-		</div>
-		</div>
 		<?php
 		$all_roles = wp_roles()->roles;
 		?>
@@ -892,18 +881,6 @@ function mo_media_role_base_restriction() {
 	</div>
 	</div>
 	</div><!-- col-md-9 -->
-	<script>
-		function show_default_roles(){
-			let roleToggle= document.getElementById('mo_enable_role_base_restriction');
-			let displayRoles = document.getElementById('mo_media_role_based_restriction_check');
-							if(roleToggle.checked){
-								displayRoles.style.display='block';
-							} else {
-								displayRoles.style.display='none';
-							}
-						}
-
-		</script>
 	<?php
 }
 /**
@@ -1134,7 +1111,7 @@ function mo_media_ip_restriction_tab() {
 			<form action="" method="POST" id="mo_enable_ip_restriction_form">
 				<?php wp_nonce_field( 'mo_enable_ip_restriction_form', 'mo_enable_ip_restriction_field' ); ?>
 				<input type="hidden" name="option" value="mo_enable_ip_restriction">
-				<input value="1" name="mo_enable_role_base_restriction" type="checkbox" disabled id="mo_enable_role_base_restriction" onclick="show_default_roles()">
+				<input value="1" name="mo_enable_ip_restriction" type="checkbox" disabled id="mo_enable_ip_restriction">
 				<span class="mo_ip_restriction_slider round" style="cursor:not-allowed"></span>
 				</form>
 				</label>

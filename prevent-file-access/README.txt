@@ -5,7 +5,7 @@ Tags: protect uploads, secure-files, content-restriction, protect-folders, media
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 5.6
-Stable tag: 2.6.6
+Stable tag: 2.6.7
 License: Expat
 License URI: https://plugins.miniorange.com/mit-license
 
@@ -143,6 +143,9 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 
 == Changelog ==
 
+= 2.6.7 =
+* Removed the Role Restriction toggle UI
+
 = 2.6.6 =
 * Added support to prevent-file-access for JPEG, DOCX files.
 
@@ -247,6 +250,9 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.6.7 =
+* Removed the Role Restriction toggle UI
 
 = 2.6.6 =
 * Added support to prevent-file-access for JPEG, DOCX files.

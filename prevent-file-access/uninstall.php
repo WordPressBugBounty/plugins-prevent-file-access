@@ -28,3 +28,6 @@
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
+
+if( has_option( 'mo_enable_role_base_restriction' ) )
+	delete_option( 'mo_enable_role_base_restriction' );
