@@ -864,12 +864,7 @@ function mo_media_role_base_restriction() {
 								</p>
 							</div>
 							<div class="col-md-4 form-group">
-								<input class="form-control" name="role_folder[]" type="text" placeholder="Enter folder name here" value="
-								<?php
-								if ( isset( $role_folder_list[ $key ] ) ) {
-									echo esc_attr( $role_folder_list[ $key ] );}
-								?>
-								" disabled>
+								<input class="form-control" name="role_folder[]" type="text" placeholder="Enter folder name here" value="" disabled>
 							</div>
 						</div>
 					<?php

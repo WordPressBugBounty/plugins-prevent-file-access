@@ -5,14 +5,14 @@ Tags: protect uploads, secure-files, content-restriction, protect-folders, media
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 5.6
-Stable tag: 2.6.7
+Stable tag: 2.6.8
 License: Expat
 License URI: https://plugins.miniorange.com/mit-license
 
-Prevent public access to WordPress files and folders. Protect downloads from public access, Role-based folder access, and User base folder access.
+Prevent public access to WordPress files and folders. Protect downloads from public access. Role and user based folder access in premium plans only.
 
 == Description ==
-[WordPress Prevent files/ folders](https://plugins.miniorange.com/wordpress-media-restriction) access provides the easiest way to protect WordPress files from public users so that your wordpress media library can be accessed only by **WordPress logged in** users or users with **specific roles/capabilities**. Your *ebooks*, *pdfs*, *other important files*, etc., can be **protected from google indexing** so that data is protected from getting stolen. Control users access to media library, Control users access to the WordPress upload folder or sub folders, and restrict all the files published on your WordPress site.
+[WordPress Prevent files/ folders](https://plugins.miniorange.com/wordpress-media-restriction) access provides the easiest way to protect WordPress files from public users so that your wordpress media library can be accessed only by **WordPress logged in** users, or by users with **specific roles/capabilities** _(role based restriction is available in the premium plans only, it is not part of the free version)_. Your *ebooks*, *pdfs*, *other important files*, etc., can be **protected from google indexing** so that data is protected from getting stolen. Control users access to media library, Control users access to the WordPress upload folder or sub folders, and restrict all the files published on your WordPress site.
 
 For restricted Content you can choose to redirect users to **403 forbidden page**, your **custom page**, **WordPress login page**, SSO login page (if you are using OAuth or SAML SSO). 
 
@@ -21,7 +21,7 @@ For restricted Content you can choose to redirect users to **403 forbidden page*
 We support a level of security where you can choose either _**cookie-based**_ restriction or _**session-based**_ restriction.
 Also, we support Apache and Nginx servers to prevent direct access to the WordPress media library and therefore protect the media library for public or restricted users.
 
-It prevents private download of the media files from public access and only the logged-in users or specific user roles can access and download the wordpress media files.
+It prevents private download of the media files from public access and only the logged-in users or specific user roles _(role based access requires a premium plan)_ can access and download the wordpress media files.
 
 We also support media/files/folders Restriction based on NFT holding in the user crypto wallet. We support any level of customization according to your requirement.
 
@@ -56,10 +56,12 @@ WordPress Prevent file/folder access provides **redirect options**. This allow y
 
 * WordPress Prevent files/ folders access allows you to protect your folders too, the **wp-content or uploads** folder where all the wordpress media files like images, videos, and document files are stored will also be protected.
 * Users have the option to **protect a particular month's media files or sub folder in uploads directory.**.
-* **User-Based Restriction** - A particular user can access only a particular folder. (Admin would be able to access all the folders)
-* **Role Base folder access** - Uploads folder or subfolders can be restricted for public access and allowed folder access to users with specific role. (Admin would be able to access all the folders)
+* **User-Based Restriction** _(premium plans only)_ - A particular user can access only a particular folder. (Admin would be able to access all the folders)
+* **Role Base folder access** _(premium plans only)_ - Uploads folder or subfolders can be restricted for public access and allowed folder access to users with specific role. (Admin would be able to access all the folders)
 
-We support **[LearnDash](https://www.learndash.com/)** and other LMS to restrict files and folders according to different groups and specific user roles.
+**Please note:** Role based and user based file/folder restriction are **premium plan features**. They are **NOT available in the free version** - the free plugin only shows these screens as a preview of the premium plans.
+
+We support **[LearnDash](https://www.learndash.com/)** and other LMS to restrict files and folders according to different groups and specific user roles _(premium plans only)_.
 
 You can customize the restriction rules and use them as per your needs.
 
@@ -112,6 +114,9 @@ This functionality operates at the server level, thus if the Apache server rules
 * If you have any questions or want to request new features, contact us via email at [oauthsupport@xecurify.com](mailto:oauthsupport@xecurify.com)
 
 == Frequently Asked Questions ==
+= Is role based file/folder restriction available in the free version? =
+No. Role based restriction and user based restriction are **premium plan features only**. The free version of the plugin restricts files and folders based on whether a user is logged in or not, it cannot restrict them by WordPress role. The Role/User base Restriction screen in the free plugin is a disabled preview of the premium feature, so any settings shown there cannot be saved or applied.
+
 = Can I prevent access to any particular folder? =
 Yes. You can prevent access to any WordPress folder that you want.
 
@@ -142,6 +147,9 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 6. Contact us or support
 
 == Changelog ==
+
+= 2.6.8 =
+* Security improvements
 
 = 2.6.7 =
 * Removed the Role Restriction toggle UI
@@ -250,6 +258,9 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.6.8 =
+* Security improvements
 
 = 2.6.7 =
 * Removed the Role Restriction toggle UI

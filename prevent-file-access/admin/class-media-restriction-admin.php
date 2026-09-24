@@ -42,6 +42,15 @@ class Media_Restriction_Admin {
 	const DEFAULT_RESTRICTED_EXTENSIONS = array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx' );
 
 	/**
+	 * Server side script and config types that are never served, even from a role based folder where
+	 * every other file type is routed through mo_media_show_file_or_folder().
+	 *
+	 * @since 2.6.7
+	 * @var string[]
+	 */
+	const BLOCKED_EXTENSIONS = array( 'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht', 'phps', 'cgi', 'pl', 'py', 'sh', 'asp', 'aspx', 'jsp', 'htaccess', 'htpasswd', 'ini', 'env' );
+
+	/**
 	 * The ID of this plugin.
 	 *
 	 * @since    1.1.1
@@ -70,6 +79,7 @@ class Media_Restriction_Admin {
 		$this->plugin_name = $plugin_name;
 		$this->version     = $version;
 		add_action( 'init', array( $this, 'mo_media_restriction_validate' ) );
+		add_action( 'admin_init', array( $this, 'mo_media_restriction_sync_role_rules' ) );
 	}
 
 	/**
@@ -192,6 +202,93 @@ class Media_Restriction_Admin {
 	}
 
 	/**
+	 * Mappping folder to it.
+	 *
+	 * @since 2.6.7
+	 * @return array Folder (lowercase, no leading/trailing slash)
+	 */
+	private function mo_media_restriction_get_role_folder_map() {
+		$role_folder_list = get_option( 'mo_role_base_restriction_folder_list' );
+		if ( empty( $role_folder_list ) || ! is_array( $role_folder_list ) ) {
+			return array();
+		}
+
+		$folder_roles = array();
+		foreach ( $role_folder_list as $role_slug => $folders ) {
+			$folders = is_array( $folders ) ? $folders : explode( ',', (string) $folders );
+			foreach ( $folders as $folder ) {
+				if ( ! is_scalar( $folder ) ) {
+					continue;
+				}
+				$folder = strtolower( trim( str_replace( '\\', '/', (string) $folder ), " \t\n\r\0\x0B/" ) );
+				if ( '' === $folder || false !== strpos( $folder, '..' ) ) {
+					continue;
+				}
+				$folder_roles[ $folder ][] = (string) $role_slug;
+			}
+		}
+		ksort( $folder_roles );
+
+		return $folder_roles;
+	}
+
+	/**
+	 * It contain the given path.
+	 *
+	 * @since 2.6.7
+	 * @param string $real_path Path already resolved by mo_media_restriction_validate_path().
+	 * @return array Matching folder.
+	 */
+	private function mo_media_restriction_get_matching_role_folders( $real_path ) {
+		$folder_roles = $this->mo_media_restriction_get_role_folder_map();
+		if ( empty( $folder_roles ) ) {
+			return array();
+		}
+
+		$relative_path = substr( $real_path, strlen( realpath( ABSPATH ) ) );
+		if ( ! is_dir( $real_path ) ) {
+			$relative_path = dirname( $relative_path );
+		}
+		$haystack = '/' . trim( strtolower( str_replace( '\\', '/', $relative_path ) ), '/' ) . '/';
+
+		$matches = array();
+		foreach ( $folder_roles as $folder => $allowed_roles ) {
+			if ( false !== strpos( $haystack, '/' . $folder . '/' ) ) {
+				$matches[ $folder ] = $allowed_roles;
+			}
+		}
+
+		return $matches;
+	}
+
+	/**
+	 * Whether the current user may access.
+	 *
+	 * @since 2.6.7
+	 * @param array $matching_folders.
+	 * @return bool
+	 */
+	private function mo_media_restriction_user_can_access_role_folders( $matching_folders ) {
+		if ( empty( $matching_folders ) ) {
+			return true;
+		}
+
+		$user       = wp_get_current_user();
+		$user_roles = array_map( 'strval', (array) $user->roles );
+		if ( in_array( 'administrator', $user_roles, true ) || is_super_admin( $user->ID ) ) {
+			return true;
+		}
+
+		foreach ( $matching_folders as $allowed_roles ) {
+			if ( ! array_intersect( $user_roles, $allowed_roles ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Show restricted folder path
 	 *
 	 * @param mixed $redirect_url redirection url.
@@ -202,6 +299,12 @@ class Media_Restriction_Admin {
 
 		if ( false === $validated_path ) {
 			wp_die( 'WPMR001: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
+		}
+
+		$role_folders = $this->mo_media_restriction_get_matching_role_folders( $validated_path );
+		if ( ! $this->mo_media_restriction_user_can_access_role_folders( $role_folders ) ) {
+			$this->mo_media_restriction_log_security_event( 'Role based folder restriction denied access', $redirect_url );
+			wp_die( 'WPMR009: You do not have permission to access this file', 'Access Denied', array( 'response' => 403 ) );
 		}
 
 		$file_path     = $validated_path;
@@ -226,14 +329,20 @@ class Media_Restriction_Admin {
 				}
 				exit;
 			} else {
-				$allowed_extensions = self::DEFAULT_RESTRICTED_EXTENSIONS;
-				$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+				$file_extension  = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+				$is_default_type = in_array( $file_extension, self::DEFAULT_RESTRICTED_EXTENSIONS, true );
 
-				if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
+				if ( ! $is_default_type && ( empty( $role_folders ) || in_array( $file_extension, self::BLOCKED_EXTENSIONS, true ) ) ) {
 					wp_die( 'WPMR002: File type not allowed', 'Access Denied', array( 'response' => 403 ) );
 				}
 
-				header( 'content-type: ' . mime_content_type( $file_path ) );
+				if ( $is_default_type ) {
+					header( 'content-type: ' . mime_content_type( $file_path ) );
+				} else {
+					header( 'Content-Type: application/octet-stream' );
+					header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( basename( $file_path ) ) . '"' );
+					header( 'X-Content-Type-Options: nosniff' );
+				}
 				$wp_filesystem = $this->mo_media_restriction_get_filesystem();
 				echo $wp_filesystem->get_contents( $file_path ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Binary/raw file content output.
 				exit;
@@ -267,9 +376,6 @@ class Media_Restriction_Admin {
 					wp_die( 'WPMR005: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 				}
 
-				// The htaccess redirect that lands here cannot generate a nonce, so access is gated on the
-				// is_user_logged_in() check above. A nonce is only verified if one was actually supplied
-				// (e.g. via mo_media_restriction_generate_secure_url()).
 				$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 				if ( '' !== $nonce && ! wp_verify_nonce( $nonce, 'mo_media_restriction_access' ) ) {
 					$this->mo_media_restriction_log_security_event( 'Invalid nonce for file access', $redirect_url );
@@ -501,6 +607,22 @@ class Media_Restriction_Admin {
 			return false;
 		}
 
+		$rules = $this->mo_media_restrict_build_rules();
+
+		if ( ! $this->mo_media_restrict_remove_rules() ) {
+			return false;
+		}
+
+		return insert_with_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION', $rules );
+	}
+
+	/**
+	 * Build the Apache rules written between the MINIORANGE MEDIA RESTRICTION markers.
+	 *
+	 * @since 2.6.7
+	 * @return string
+	 */
+	private function mo_media_restrict_build_rules() {
 		$mo_media_restriction_file_types = get_option( 'mo_media_restriction_file_types' );
 		// Strip everything except lowercase letters, digits, and the pipe separator to prevent htaccess injection.
 		$mo_media_restriction_file_types = preg_replace( '/[^a-zA-Z0-9|]/', '', (string) $mo_media_restriction_file_types );
@@ -522,17 +644,56 @@ class Media_Restriction_Admin {
 		// Every matching request is routed through mo_media_restriction_validate(), which performs a
 		// real is_user_logged_in() check in PHP. Apache/htaccess cannot verify a WordPress auth cookie's
 		// HMAC, so it must never decide access on its own (see mo_media_restriction_validate()).
-		$rules  = 'RewriteCond %{REQUEST_FILENAME} ^.*(' . $mo_media_restriction_file_types . ")$ [OR]\n";
+		$rules = 'RewriteCond %{REQUEST_FILENAME} ^.*(' . $mo_media_restriction_file_types . ")$ [OR]\n";
+
+
+		foreach ( array_keys( $this->mo_media_restriction_get_role_folder_map() ) as $folder ) {
+			$rules .= 'RewriteCond %{REQUEST_URI} /' . preg_replace( '#[^a-z0-9_\-/]#', '.', $folder ) . "/ [NC,OR]\n";
+		}
+
 		$rules .= 'RewriteCond %{REQUEST_URI} protectedfiles ';
 		$rules .= "\n";
 		$rules .= 'RewriteCond %{REQUEST_URI} ' . $uploads_relative . " [NC]\n";
 		$rules .= 'RewriteRule ^(.*)$ ./?mo_media_restrict_request=1&redirect_to=$1 [R=302,NC]';
 
-		if ( ! $this->mo_media_restrict_remove_rules() ) {
-			return false;
+		return $rules;
+	}
+
+	/**
+	 * Keep the Apache rules in sync.
+	 *
+	 * @since 2.6.7
+	 * @return void
+	 */
+	public function mo_media_restriction_sync_role_rules() {
+		if ( ! current_user_can( 'manage_options' ) || ! get_option( 'mo_enable_media_restriction' ) ) {
+			return;
+		}
+		if ( 'nginx' === get_option( 'mo_media_restriction_choose_server', 'apache' ) || 2 === (int) get_option( 'mo_media_restriction_show_rules' ) ) {
+			return;
+		}
+		if ( empty( $this->mo_media_restriction_get_role_folder_map() ) ) {
+			return;
 		}
 
-		return insert_with_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION', $rules );
+		if ( ! function_exists( 'get_home_path' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'insert_with_markers' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+		}
+
+		$htaccess_file = get_home_path() . '.htaccess';
+		if ( ! file_exists( $htaccess_file ) || ! wp_is_writable( $htaccess_file ) ) {
+			return;
+		}
+
+		$rules = $this->mo_media_restrict_build_rules();
+		if ( array_map( 'rtrim', extract_from_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION' ) ) === array_map( 'rtrim', explode( "\n", $rules ) ) ) {
+			return;
+		}
+
+		insert_with_markers( $htaccess_file, 'MINIORANGE MEDIA RESTRICTION', $rules );
 	}
 
 	/**
