@@ -41,6 +41,9 @@ class Media_Restriction_Admin {
 	 */
 	const DEFAULT_RESTRICTED_EXTENSIONS = array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx' );
 
+	const RATE_LIMIT_WINDOW_SECONDS = 60;
+	const RATE_LIMIT_MAX_FAILED_ATTEMPTS = 30;
+
 	/**
 	 * Server side script and config types that are never served, even from a role based folder where
 	 * every other file type is routed through mo_media_show_file_or_folder().
@@ -298,6 +301,7 @@ class Media_Restriction_Admin {
 		$validated_path = $this->mo_media_restriction_validate_path( $redirect_url );
 
 		if ( false === $validated_path ) {
+			$this->mo_media_restriction_record_failed_attempt();
 			wp_die( 'WPMR001: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 		}
 
@@ -333,6 +337,7 @@ class Media_Restriction_Admin {
 				$is_default_type = in_array( $file_extension, self::DEFAULT_RESTRICTED_EXTENSIONS, true );
 
 				if ( ! $is_default_type && ( empty( $role_folders ) || in_array( $file_extension, self::BLOCKED_EXTENSIONS, true ) ) ) {
+					$this->mo_media_restriction_record_failed_attempt();
 					wp_die( 'WPMR002: File type not allowed', 'Access Denied', array( 'response' => 403 ) );
 				}
 
@@ -348,6 +353,7 @@ class Media_Restriction_Admin {
 				exit;
 			}
 		} else {
+			$this->mo_media_restriction_record_failed_attempt();
 			wp_die( 'WPMR003: No such file exist' );
 		}
 	}
@@ -370,25 +376,28 @@ class Media_Restriction_Admin {
 				}
 				exit;
 			} else {
+				if ( $this->mo_media_restriction_is_rate_limited() ) {
+					wp_die( 'WPMR008: Too many requests. Please try again later.', 'Rate Limit Exceeded', array( 'response' => 429 ) );
+				}
+
 				$redirect_url = isset( $_GET['redirect_to'] ) ? sanitize_text_field( wp_unslash( $_GET['redirect_to'] ) ) : site_url();
 
 				if ( empty( $redirect_url ) || strlen( $redirect_url ) > 255 ) {
+					$this->mo_media_restriction_record_failed_attempt();
 					wp_die( 'WPMR005: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 				}
 
 				$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 				if ( '' !== $nonce && ! wp_verify_nonce( $nonce, 'mo_media_restriction_access' ) ) {
 					$this->mo_media_restriction_log_security_event( 'Invalid nonce for file access', $redirect_url );
+					$this->mo_media_restriction_record_failed_attempt();
 					wp_die( 'WPMR006: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
 				}
 
 				if ( strpos( $redirect_url, '..' ) !== false || strpos( $redirect_url, '/' ) === 0 ) {
 					$this->mo_media_restriction_log_security_event( 'Path traversal attempt detected', $redirect_url );
+					$this->mo_media_restriction_record_failed_attempt();
 					wp_die( 'WPMR007: Invalid file path', 'Access Denied', array( 'response' => 403 ) );
-				}
-
-				if ( ! $this->mo_media_restriction_check_rate_limit() ) {
-					wp_die( 'WPMR008: Too many requests. Please try again later.', 'Rate Limit Exceeded', array( 'response' => 429 ) );
 				}
 
 				$this->mo_media_show_file_or_folder( $redirect_url );
@@ -430,40 +439,38 @@ class Media_Restriction_Admin {
 		update_option( 'mo_media_restriction_security_logs', $existing_logs, 'no' );
 	}
 
-	/**
-	 * Simple rate limiting to prevent abuse
-	 *
-	 * @return bool True if request is allowed, false if rate limited
-	 */
-	private function mo_media_restriction_check_rate_limit() {
+	private function mo_media_restriction_is_rate_limited() {
+		$failed_attempts = $this->mo_media_restriction_get_recent_failed_attempts();
+
+		return count( $failed_attempts ) >= self::RATE_LIMIT_MAX_FAILED_ATTEMPTS;
+	}
+
+	private function mo_media_restriction_record_failed_attempt() {
+		$user_id         = get_current_user_id();
+		$rate_limit_key  = "mo_media_restriction_failed_attempts_{$user_id}";
+		$failed_attempts = $this->mo_media_restriction_get_recent_failed_attempts();
+
+		$failed_attempts[] = time();
+		set_transient( $rate_limit_key, $failed_attempts, self::RATE_LIMIT_WINDOW_SECONDS );
+	}
+
+	private function mo_media_restriction_get_recent_failed_attempts() {
 		$user_id        = get_current_user_id();
-		$rate_limit_key = "mo_media_restriction_rate_limit_{$user_id}";
+		$rate_limit_key = "mo_media_restriction_failed_attempts_{$user_id}";
 		$current_time   = time();
-		$window_size    = 60;
-		$max_requests   = 30;
 
-		$user_requests = get_transient( $rate_limit_key );
+		$failed_attempts = get_transient( $rate_limit_key );
 
-		if ( false === $user_requests ) {
-			set_transient( $rate_limit_key, array( $current_time ), $window_size );
-			return true;
+		if ( false === $failed_attempts ) {
+			return array();
 		}
 
-		$user_requests = array_filter(
-			$user_requests,
-			function ( $timestamp ) use ( $current_time, $window_size ) {
-				return ( $current_time - $timestamp ) < $window_size;
+		return array_filter(
+			$failed_attempts,
+			function ( $timestamp ) use ( $current_time ) {
+				return ( $current_time - $timestamp ) < self::RATE_LIMIT_WINDOW_SECONDS;
 			}
 		);
-
-		if ( count( $user_requests ) >= $max_requests ) {
-			return false;
-		}
-
-		$user_requests[] = $current_time;
-		set_transient( $rate_limit_key, $user_requests, $window_size );
-
-		return true;
 	}
 
 

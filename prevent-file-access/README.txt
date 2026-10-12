@@ -5,7 +5,7 @@ Tags: protect uploads, secure-files, content-restriction, protect-folders, media
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 5.6
-Stable tag: 2.6.8
+Stable tag: 2.7.0
 License: Expat
 License URI: https://plugins.miniorange.com/mit-license
 
@@ -148,6 +148,10 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 
 == Changelog ==
 
+= 2.7.0 =
+* Fixed rate limiter incorrectly counting successful file requests, which could throttle legitimate pages loading many protected files
+* Rate limiting now only tracks failed/suspicious access attempts (invalid path, invalid nonce, path traversal, disallowed file type, missing file)
+
 = 2.6.8 =
 * Security improvements
 
@@ -258,6 +262,10 @@ Yes, we at miniOrange provide high-quality customer support. Please email us at 
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.7.0 =
+* Fixed rate limiter incorrectly counting successful file requests, which could throttle legitimate pages loading many protected files
+* Rate limiting now only tracks failed/suspicious access attempts (invalid path, invalid nonce, path traversal, disallowed file type, missing file)
 
 = 2.6.8 =
 * Security improvements
